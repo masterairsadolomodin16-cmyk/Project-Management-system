@@ -16,131 +16,146 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-st.markdown(
-    """
+def hide_streamlit_branding():
+    """Hides Streamlit branding, top header, footer, and viewer badge."""
+    hide_css = """
     <style>
-    /* Orbit Admin Inspired Design System */
-    :root {
-        --blue: #3467eb;
-        --orange: #ff8a3d;
-        --ink: #17233c;
-        --muted: #7d889f;
-        --line: #e9edf5;
-        --page: #f5f7fc;
-        --green: #18a879;
-        --sidebar: #172746;
-    }
+        /* Orbit Admin Inspired Design System */
+        :root {
+            --blue: #3467eb;
+            --orange: #ff8a3d;
+            --ink: #17233c;
+            --muted: #7d889f;
+            --line: #e9edf5;
+            --page: #f5f7fc;
+            --green: #18a879;
+            --sidebar: #172746;
+        }
 
-    .stApp {
-        background-color: var(--page);
-        color: var(--ink);
-        font-family: 'Inter', Arial, sans-serif;
-    }
+        .stApp {
+            background-color: var(--page);
+            color: var(--ink);
+            font-family: 'Inter', Arial, sans-serif;
+        }
 
-    /* Sidebar Styling */
-    [data-testid="stSidebar"] {
-        background-color: var(--sidebar);
-        color: #ffffff;
-        border-right: 1px solid rgba(255, 255, 255, 0.08);
-    }
-    [data-testid="stSidebar"] .stMarkdown h1, 
-    [data-testid="stSidebar"] .stMarkdown h2, 
-    [data-testid="stSidebar"] .stMarkdown h3,
-    [data-testid="stSidebar"] label {
-        color: #b7c3db !important;
-    }
+        /* Hide Streamlit Header, Footer & Branding */
+        header, footer, #MainMenu {
+            visibility: hidden !important;
+            display: none !important;
+        }
+        div[data-testid="stStatusWidget"],
+        .viewerBadge_container,
+        a[href*="streamlit.io"],
+        a[href*="streamlit.cloud"] {
+            visibility: hidden !important;
+            display: none !important;
+        }
 
-    /* Modern Headers */
-    .main-header {
-        font-size: 22px;
-        font-weight: 800;
-        color: var(--ink);
-        letter-spacing: -0.5px;
-        border-bottom: 2px solid var(--line);
-        padding-bottom: 8px;
-        margin-bottom: 20px;
-    }
+        /* Sidebar Styling */
+        [data-testid="stSidebar"] {
+            background-color: var(--sidebar);
+            color: #ffffff;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        [data-testid="stSidebar"] .stMarkdown h1, 
+        [data-testid="stSidebar"] .stMarkdown h2, 
+        [data-testid="stSidebar"] .stMarkdown h3,
+        [data-testid="stSidebar"] label {
+            color: #b7c3db !important;
+        }
 
-    /* Metric Cards */
-    .stMetric {
-        background: white;
-        padding: 16px 18px;
-        border-radius: 14px;
-        border: 1px solid var(--line);
-        box-shadow: 0 4px 16px rgba(35, 58, 101, 0.04);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .stMetric:hover {
-        box-shadow: 0 6px 20px rgba(35, 58, 101, 0.08);
-    }
-    [data-testid="stMetricValue"] {
-        font-size: 1.5rem !important;
-        font-weight: 800 !important;
-        color: var(--ink) !important;
-        white-space: nowrap !important;
-    }
-    [data-testid="stMetricLabel"] {
-        font-size: 0.8rem !important;
-        font-weight: 700 !important;
-        color: var(--muted) !important;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-    }
+        /* Modern Headers */
+        .main-header {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--ink);
+            letter-spacing: -0.5px;
+            border-bottom: 2px solid var(--line);
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+        }
 
-    /* Status Badges */
-    .status-ok {
-        background-color: #e8f8f1;
-        color: #15966b;
-        padding: 10px 14px;
-        border-radius: 10px;
-        font-weight: 700;
-        font-size: 13px;
-        border: 1px solid #d1f2e3;
-    }
-    .status-warn {
-        background-color: #fff4e5;
-        color: #c67a22;
-        padding: 10px 14px;
-        border-radius: 10px;
-        font-weight: 700;
-        font-size: 13px;
-        border: 1px solid #ffe3c4;
-    }
-    .status-alert {
-        background-color: #fff0f1;
-        color: #d45061;
-        padding: 10px 14px;
-        border-radius: 10px;
-        font-weight: 700;
-        font-size: 13px;
-        border: 1px solid #ffd6dc;
-    }
+        /* Metric Cards */
+        .stMetric {
+            background: white;
+            padding: 16px 18px;
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            box-shadow: 0 4px 16px rgba(35, 58, 101, 0.04);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .stMetric:hover {
+            box-shadow: 0 6px 20px rgba(35, 58, 101, 0.08);
+        }
+        [data-testid="stMetricValue"] {
+            font-size: 1.5rem !important;
+            font-weight: 800 !important;
+            color: var(--ink) !important;
+            white-space: nowrap !important;
+        }
+        [data-testid="stMetricLabel"] {
+            font-size: 0.8rem !important;
+            font-weight: 700 !important;
+            color: var(--muted) !important;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
 
-    /* Tabs Styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background-color: transparent;
-        padding-bottom: 10px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        height: 42px;
-        border-radius: 10px;
-        background-color: white;
-        border: 1px solid var(--line);
-        color: var(--muted);
-        font-weight: 700;
-        font-size: 12px;
-        padding: 0 16px;
-    }
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(100deg, #3467eb, #4777f3) !important;
-        color: white !important;
-        border: none !important;
-    }
+        /* Status Badges */
+        .status-ok {
+            background-color: #e8f8f1;
+            color: #15966b;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            border: 1px solid #d1f2e3;
+        }
+        .status-warn {
+            background-color: #fff4e5;
+            color: #c67a22;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            border: 1px solid #ffe3c4;
+        }
+        .status-alert {
+            background-color: #fff0f1;
+            color: #d45061;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            border: 1px solid #ffd6dc;
+        }
+
+        /* Tabs Styling */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 8px;
+            background-color: transparent;
+            padding-bottom: 10px;
+        }
+        .stTabs [data-baseweb="tab"] {
+            height: 42px;
+            border-radius: 10px;
+            background-color: white;
+            border: 1px solid var(--line);
+            color: var(--muted);
+            font-weight: 700;
+            font-size: 12px;
+            padding: 0 16px;
+        }
+        .stTabs [aria-selected="true"] {
+            background: linear-gradient(100deg, #3467eb, #4777f3) !important;
+            color: white !important;
+            border: none !important;
+        }
     </style>
-""",
-    unsafe_allow_html=True,
-)
+    """
+    st.markdown(hide_css, unsafe_allow_html=True)
+
+hide_streamlit_branding()
 
 
 def format_currency_compact(val: float) -> str:
@@ -1025,5 +1040,5 @@ with tab4:
 
 st.markdown("---")
 st.caption(
-    "P6 Controls Hub Engine v6.3 | Orbit Admin Design System Integration Active"
+    "P6 Controls Hub Engine v6.3 | Orbit Admin Design System & Branding Cleanup Active"
 )
