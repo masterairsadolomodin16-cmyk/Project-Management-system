@@ -98,8 +98,12 @@ def calculate_cpm_and_float(df: pd.DataFrame) -> pd.DataFrame:
 
     df["Total Float (Days)"] = pd.to_numeric(df.get("Total Float (Days)", 0), errors="coerce").fillna(0)
 
-    # Calculate Critical Path based on Total Float
-    df["Is Critical Path"] = df["Total Float (Days)"] <= 0
+    # Calculate Critical Path based on Total Float or user override
+    if "Is Critical Path" not in df.columns:
+        df["Is Critical Path"] = df["Total Float (Days)"] <= 0
+    else:
+        df["Is Critical Path"] = df["Is Critical Path"].fillna(df["Total Float (Days)"] <= 0).astype(bool)
+
     df["Path Type"] = np.where(df["Is Critical Path"], "Critical Path", "Non-Critical")
 
     return df
@@ -129,6 +133,7 @@ def get_mock_project_data():
             "BAC (₱)": 150000.0,
             "AC (₱)": 145000.0,
             "Total Float (Days)": 0,
+            "Is Critical Path": True,
         },
         {
             "Project": "Freeport Modernization",
@@ -148,6 +153,7 @@ def get_mock_project_data():
             "BAC (₱)": 450000.0,
             "AC (₱)": 410000.0,
             "Total Float (Days)": 0,
+            "Is Critical Path": True,
         },
         {
             "Project": "Freeport Modernization",
@@ -167,6 +173,7 @@ def get_mock_project_data():
             "BAC (₱)": 2200000.0,
             "AC (₱)": 1300000.0,
             "Total Float (Days)": 15,
+            "Is Critical Path": False,
         },
         {
             "Project": "Freeport Modernization",
@@ -186,6 +193,7 @@ def get_mock_project_data():
             "BAC (₱)": 5800000.0,
             "AC (₱)": 2100000.0,
             "Total Float (Days)": 0,
+            "Is Critical Path": True,
         },
         {
             "Project": "Freeport Modernization",
@@ -205,6 +213,7 @@ def get_mock_project_data():
             "BAC (₱)": 3100000.0,
             "AC (₱)": 400000.0,
             "Total Float (Days)": 10,
+            "Is Critical Path": False,
         },
         {
             "Project": "Freeport Modernization",
@@ -224,6 +233,7 @@ def get_mock_project_data():
             "BAC (₱)": 800000.0,
             "AC (₱)": 0.0,
             "Total Float (Days)": 0,
+            "Is Critical Path": True,
         },
         {
             "Project": "SEZ Infrastructure Phasing",
@@ -243,6 +253,7 @@ def get_mock_project_data():
             "BAC (₱)": 800000.0,
             "AC (₱)": 850000.0,
             "Total Float (Days)": 0,
+            "Is Critical Path": True,
         },
         {
             "Project": "SEZ Infrastructure Phasing",
@@ -262,6 +273,7 @@ def get_mock_project_data():
             "BAC (₱)": 3500000.0,
             "AC (₱)": 1600000.0,
             "Total Float (Days)": 0,
+            "Is Critical Path": True,
         },
         {
             "Project": "SEZ Infrastructure Phasing",
@@ -281,6 +293,7 @@ def get_mock_project_data():
             "BAC (₱)": 2800000.0,
             "AC (₱)": 900000.0,
             "Total Float (Days)": 20,
+            "Is Critical Path": False,
         },
     ]
 
@@ -528,7 +541,6 @@ with tab1:
         view_df = view_df[view_df["Is Critical Path"] == True]
 
     if not view_df.empty:
-        # Color mapping: Red for Critical Path, Blue for Non-Critical Path
         color_discrete_map = {
             "Critical Path": "#E11D48",
             "Non-Critical": "#2563EB"
@@ -593,6 +605,8 @@ with tab1:
         "AC (₱)": st.column_config.NumberColumn("AC (₱)", format="₱%.2f"),
         "% Complete": st.column_config.NumberColumn("% Complete", min_value=0, max_value=100, step=1, format="%d%%"),
         "Total Float (Days)": st.column_config.NumberColumn("Total Float (Days)", format="%d"),
+        "Is Critical Path": st.column_config.CheckboxColumn("Is Critical Path?", help="Check if activity is on critical path"),
+        "Path Type": st.column_config.TextColumn("CPM Path Type", disabled=True),
     }
 
     edited_df = st.data_editor(
@@ -601,6 +615,8 @@ with tab1:
             "WBS Code",
             "WBS Phase",
             "Activity Name",
+            "Path Type",
+            "Is Critical Path",
             "Baseline Start",
             "Baseline Finish",
             "Planned Start",
@@ -923,5 +939,5 @@ with tab4:
 
 st.markdown("---")
 st.caption(
-    "P6 Controls Hub Engine v5.1 | Critical Path & Float Categorization Restored"
+    "P6 Controls Hub Engine v5.2 | Critical Path Checkbox Grid & Timeline Controls Active"
 )
