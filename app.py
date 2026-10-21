@@ -565,13 +565,11 @@ with tab1:
     )
 
     if st.button("💾 Apply Schedule Updates"):
-        for idx in edited_df.index:
-            act_id = edited_df.loc[idx, "Activity ID"]
-            for col in edited_df.columns:
-                val = edited_df.loc[idx, col]
-                st.session_state.df_activities.loc[
-                    st.session_state.df_activities["Activity ID"] == act_id, col
-                ] = val
+        master = st.session_state.df_activities.set_index("Activity ID")
+        updates = edited_df.set_index("Activity ID")
+        master.update(updates)
+        st.session_state.df_activities = master.reset_index()
+
         st.success("Schedule adjustments saved & CPM re-computed!")
         st.rerun()
 
