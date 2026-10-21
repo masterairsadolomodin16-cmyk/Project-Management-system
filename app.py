@@ -567,10 +567,9 @@ with tab1:
     if st.button("💾 Apply Schedule Updates"):
         for _, row in edited_df.iterrows():
             act_id = row["Activity ID"]
-            st.session_state.df_activities.loc[
-                st.session_state.df_activities["Activity ID"] == act_id,
-                edited_df.columns,
-            ] = row.values
+            mask = st.session_state.df_activities["Activity ID"] == act_id
+            for col in edited_df.columns:
+                st.session_state.df_activities.loc[mask, col] = row[col]
         st.success("Schedule adjustments saved & CPM re-computed!")
         st.rerun()
 
