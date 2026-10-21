@@ -70,7 +70,6 @@ st.markdown(
 
 
 def format_currency_compact(val: float) -> str:
-    """Formats monetary figures in Philippine Peso (₱) concisely."""
     if abs(val) >= 1_000_000:
         return f"₱{val / 1_000_000:,.2f}M"
     elif abs(val) >= 1_000:
@@ -588,7 +587,6 @@ with tab1:
         if col in editor_df.columns:
             editor_df[col] = pd.to_datetime(editor_df[col], errors="coerce").dt.date
 
-    # Interactive Grid with Date Picker configuration for interactive calendar view
     column_config = {
         "Baseline Start": st.column_config.DateColumn("Baseline Start", format="YYYY-MM-DD"),
         "Baseline Finish": st.column_config.DateColumn("Baseline Finish", format="YYYY-MM-DD"),
@@ -630,8 +628,6 @@ with tab1:
             st.session_state.df_activities["Project"] != selected_project
         ]
         edited_df["Project"] = selected_project
-        
-        # Ensure date types persist correctly upon save
         for col in date_cols:
             if col in edited_df.columns:
                 edited_df[col] = pd.to_datetime(edited_df[col], errors="coerce").dt.date
@@ -703,10 +699,10 @@ with tab2:
 
     st.markdown("---")
 
-    st.subheader("📌 Project Performance Interpretation")
+    st.subheader("📌 Project Performance & Slippage Evaluation")
     if cpi >= 1.0 and spi >= 1.0:
         st.markdown(
-            '<div class="status-ok">✅ Project is ON SCHEDULE (SPI ≥ 1) and WITHIN BUDGET (CPI ≥ 1).</div>',
+            '<div class="status-ok">✅ Project is ON SCHEDULE (SPI ≥ 1) and WITHIN BUDGET (CPI ≥ 1). No negative schedule slippage.</div>',
             unsafe_allow_html=True,
         )
     elif cpi < 1.0 and spi >= 1.0:
@@ -716,28 +712,35 @@ with tab2:
         )
     elif cpi >= 1.0 and spi < 1.0:
         st.markdown(
-            '<div class="status-warn">⚠️ Project is UNDER BUDGET but BEHIND SCHEDULE (SPI < 1).</div>',
+            '<div class="status-warn">⚠️ Project is UNDER BUDGET but BEHIND SCHEDULE (SPI < 1). Schedule slippage detected.</div>',
             unsafe_allow_html=True,
         )
     else:
         st.markdown(
-            '<div class="status-alert">🚨 CRITICAL: Project is BEHIND SCHEDULE and OVER BUDGET.</div>',
+            '<div class="status-alert">🚨 CRITICAL: Project is BEHIND SCHEDULE (Slippage present) and OVER BUDGET.</div>',
             unsafe_allow_html=True,
         )
 
     st.write("")
-    st.subheader("📈 Time-Phased Performance S-Curve (PV vs EV vs AC)")
+    st.subheader("📈 Time-Phased Performance S-Curve with Data Date (Baseline Status Line)")
 
+    # Interactive Data Date Selector for monitoring slippage
     months = pd.date_range(
         start="2026-01-01", periods=12, freq="MS"
     ).strftime("%Y-%m").tolist()
+    
+    col_d1, col_d2 = st.columns([2, 2])
+    with col_d1:
+        selected_data_date = st.selectbox("📅 Select Status Data Date (Current Progress Point)", months, index=5)
+
     cum_pv = np.cumsum(np.linspace(bac * 0.04, bac * 0.12, 12))
     cum_ev = cum_pv * (spi if spi > 0 else 0.9)
     cum_ac = cum_ev / (cpi if cpi > 0 else 1.1)
 
-    current_month_idx = 6
-    cum_ev[current_month_idx:] = np.nan
-    cum_ac[current_month_idx:] = np.nan
+    data_date_idx = months.index(selected_data_date)
+    # Mask actuals and earned values after the selected data date
+    cum_ev[data_date_idx + 1:] = np.nan
+    cum_ac[data_date_idx + 1:] = np.nan
 
     scurve_df = pd.DataFrame({
         "Month": months,
@@ -775,8 +778,18 @@ with tab2:
         )
     )
 
+    # Add Vertical Data Date Line for Slippage Monitoring
+    fig_scurve.add_vline(
+        x=selected_data_date,
+        line_width=3,
+        line_dash="dash",
+        line_color="#E11D48",
+        annotation_text=f"Data Date: {selected_data_date}",
+        annotation_position="top right"
+    )
+
     fig_scurve.update_layout(
-        title="Cost Performance Baseline (S-Curve Monitoring)",
+        title=f"Cost Performance Baseline & Slippage Analysis (Status Date: {selected_data_date})",
         xaxis_title="Timeline (Months)",
         yaxis_title="Cumulative Cost (₱)",
         hovermode="x unified",
@@ -891,5 +904,5 @@ with tab4:
 
 st.markdown("---")
 st.caption(
-    "P6 Controls Hub Engine v4.0 | Professional Project Controls & Actuals Tracking Enabled"
+    "P6 Controls Hub Engine v4.1 | Professional Data Date & Slippage Evaluation Enabled"
 )
