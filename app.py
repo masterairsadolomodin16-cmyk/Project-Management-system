@@ -96,12 +96,11 @@ def calculate_cpm_and_float(df: pd.DataFrame) -> pd.DataFrame:
     df["Late Finish"] = df["Early Finish"]
     df["Late Start"] = df["Early Start"]
 
-    df["Total Float (Days)"] = (
-        (df["Late Finish"] - df["Early Finish"]).dt.days
-    ).fillna(0)
+    df["Total Float (Days)"] = pd.to_numeric(df.get("Total Float (Days)", 0), errors="coerce").fillna(0)
 
-    if "Is Critical Path" not in df.columns:
-        df["Is Critical Path"] = df["Total Float (Days)"] <= 0
+    # Calculate Critical Path based on Total Float
+    df["Is Critical Path"] = df["Total Float (Days)"] <= 0
+    df["Path Type"] = np.where(df["Is Critical Path"], "Critical Path", "Non-Critical")
 
     return df
 
@@ -130,7 +129,6 @@ def get_mock_project_data():
             "BAC (₱)": 150000.0,
             "AC (₱)": 145000.0,
             "Total Float (Days)": 0,
-            "Is Critical Path": True,
         },
         {
             "Project": "Freeport Modernization",
@@ -150,7 +148,6 @@ def get_mock_project_data():
             "BAC (₱)": 450000.0,
             "AC (₱)": 410000.0,
             "Total Float (Days)": 0,
-            "Is Critical Path": True,
         },
         {
             "Project": "Freeport Modernization",
@@ -170,7 +167,6 @@ def get_mock_project_data():
             "BAC (₱)": 2200000.0,
             "AC (₱)": 1300000.0,
             "Total Float (Days)": 15,
-            "Is Critical Path": False,
         },
         {
             "Project": "Freeport Modernization",
@@ -190,7 +186,6 @@ def get_mock_project_data():
             "BAC (₱)": 5800000.0,
             "AC (₱)": 2100000.0,
             "Total Float (Days)": 0,
-            "Is Critical Path": True,
         },
         {
             "Project": "Freeport Modernization",
@@ -210,7 +205,6 @@ def get_mock_project_data():
             "BAC (₱)": 3100000.0,
             "AC (₱)": 400000.0,
             "Total Float (Days)": 10,
-            "Is Critical Path": False,
         },
         {
             "Project": "Freeport Modernization",
@@ -230,7 +224,6 @@ def get_mock_project_data():
             "BAC (₱)": 800000.0,
             "AC (₱)": 0.0,
             "Total Float (Days)": 0,
-            "Is Critical Path": True,
         },
         {
             "Project": "SEZ Infrastructure Phasing",
@@ -250,7 +243,6 @@ def get_mock_project_data():
             "BAC (₱)": 800000.0,
             "AC (₱)": 850000.0,
             "Total Float (Days)": 0,
-            "Is Critical Path": True,
         },
         {
             "Project": "SEZ Infrastructure Phasing",
@@ -270,7 +262,6 @@ def get_mock_project_data():
             "BAC (₱)": 3500000.0,
             "AC (₱)": 1600000.0,
             "Total Float (Days)": 0,
-            "Is Critical Path": True,
         },
         {
             "Project": "SEZ Infrastructure Phasing",
@@ -290,7 +281,6 @@ def get_mock_project_data():
             "BAC (₱)": 2800000.0,
             "AC (₱)": 900000.0,
             "Total Float (Days)": 20,
-            "Is Critical Path": False,
         },
     ]
 
@@ -538,14 +528,18 @@ with tab1:
         view_df = view_df[view_df["Is Critical Path"] == True]
 
     if not view_df.empty:
-        color_discrete_map = {True: "#E11D48", False: "#2563EB"}
+        # Color mapping: Red for Critical Path, Blue for Non-Critical Path
+        color_discrete_map = {
+            "Critical Path": "#E11D48",
+            "Non-Critical": "#2563EB"
+        }
 
         fig_gantt = px.timeline(
             view_df,
             x_start="Planned Start",
             x_end="Planned Finish",
             y="Activity Name",
-            color="Is Critical Path",
+            color="Path Type",
             color_discrete_map=color_discrete_map,
             hover_data=[
                 "Activity ID",
@@ -563,7 +557,7 @@ with tab1:
             height=400,
             margin=dict(l=10, r=10, t=40, b=10),
             legend=dict(
-                title=dict(text="Path Status"),
+                title=dict(text="CPM Path Status"),
                 orientation="h",
                 yanchor="bottom",
                 y=1.02,
@@ -598,6 +592,7 @@ with tab1:
         "BAC (₱)": st.column_config.NumberColumn("BAC (₱)", format="₱%.2f"),
         "AC (₱)": st.column_config.NumberColumn("AC (₱)", format="₱%.2f"),
         "% Complete": st.column_config.NumberColumn("% Complete", min_value=0, max_value=100, step=1, format="%d%%"),
+        "Total Float (Days)": st.column_config.NumberColumn("Total Float (Days)", format="%d"),
     }
 
     edited_df = st.data_editor(
@@ -614,6 +609,7 @@ with tab1:
             "Actual Finish",
             "Original Duration (Days)",
             "% Complete",
+            "Total Float (Days)",
             "BAC (₱)",
             "AC (₱)",
             "Contractor",
@@ -725,14 +721,12 @@ with tab2:
     st.write("")
     st.subheader("📈 Time-Phased Performance S-Curve with Data Date (Baseline Status Line)")
 
-    # Dynamic Month Generation based on actual WBS start/finish date ranges
     all_starts = pd.to_datetime(filtered_df["Planned Start"], errors="coerce").dropna()
     all_finishes = pd.to_datetime(filtered_df["Planned Finish"], errors="coerce").dropna()
 
     min_date = all_starts.min() if not all_starts.empty else pd.Timestamp("2026-01-01")
     max_date = all_finishes.max() if not all_finishes.empty else pd.Timestamp("2026-12-31")
 
-    # Generate monthly series dynamically (covers 2026, 2027, 2028+)
     months_series = pd.date_range(start=min_date, end=max_date + pd.Timedelta(days=30), freq="MS")
     months = months_series.strftime("%Y-%m").tolist()
     if len(months) < 2:
@@ -740,7 +734,6 @@ with tab2:
 
     col_d1, col_d2 = st.columns([2, 2])
     with col_d1:
-        # Interactive Calendar Date Picker replacing dropdown
         selected_data_date_obj = st.date_input(
             "📅 Select Status Data Date (Current Progress Point)",
             value=datetime.date(min_date.year, min_date.month, 15) if min_date else datetime.date(2026, 6, 15),
@@ -793,7 +786,6 @@ with tab2:
         )
     )
 
-    # Vertical Data Date Line for Slippage Tracking across calendar dates
     fig_scurve.add_shape(
         type="line",
         x0=selected_data_date,
@@ -931,5 +923,5 @@ with tab4:
 
 st.markdown("---")
 st.caption(
-    "P6 Controls Hub Engine v5.0 | Dynamic Calendar Picker & Multi-Year Timeline Enabled"
+    "P6 Controls Hub Engine v5.1 | Critical Path & Float Categorization Restored"
 )
