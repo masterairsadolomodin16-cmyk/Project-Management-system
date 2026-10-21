@@ -70,6 +70,7 @@ st.markdown(
 
 
 def format_currency_compact(val: float) -> str:
+    """Formats monetary figures in Philippine Peso (₱) concisely."""
     if abs(val) >= 1_000_000:
         return f"₱{val / 1_000_000:,.2f}M"
     elif abs(val) >= 1_000:
@@ -106,7 +107,7 @@ def calculate_cpm_and_float(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ==========================================
-# SAMPLE DATA GENERATOR & PROFESSIONAL BASELINE
+# SAMPLE DATA GENERATOR & BASELINE SETUP
 # ==========================================
 @st.cache_data
 def get_mock_project_data():
@@ -126,8 +127,8 @@ def get_mock_project_data():
             "Actual Finish": "2026-02-15",
             "Original Duration (Days)": 41,
             "% Complete": 100,
-            "BAC (₱)": 150000,
-            "AC (₱)": 145000,
+            "BAC (₱)": 150000.0,
+            "AC (₱)": 145000.0,
             "Total Float (Days)": 0,
             "Is Critical Path": True,
         },
@@ -143,11 +144,11 @@ def get_mock_project_data():
             "Planned Start": "2026-02-16",
             "Planned Finish": "2026-04-30",
             "Actual Start": "2026-02-16",
-            "Actual Finish": "",
+            "Actual Finish": None,
             "Original Duration (Days)": 73,
             "% Complete": 85,
-            "BAC (₱)": 450000,
-            "AC (₱)": 410000,
+            "BAC (₱)": 450000.0,
+            "AC (₱)": 410000.0,
             "Total Float (Days)": 0,
             "Is Critical Path": True,
         },
@@ -163,11 +164,11 @@ def get_mock_project_data():
             "Planned Start": "2026-03-01",
             "Planned Finish": "2026-08-31",
             "Actual Start": "2026-03-05",
-            "Actual Finish": "",
+            "Actual Finish": None,
             "Original Duration (Days)": 183,
             "% Complete": 50,
-            "BAC (₱)": 2200000,
-            "AC (₱)": 1300000,
+            "BAC (₱)": 2200000.0,
+            "AC (₱)": 1300000.0,
             "Total Float (Days)": 15,
             "Is Critical Path": False,
         },
@@ -183,11 +184,11 @@ def get_mock_project_data():
             "Planned Start": "2026-05-01",
             "Planned Finish": "2026-11-30",
             "Actual Start": "2026-05-05",
-            "Actual Finish": "",
+            "Actual Finish": None,
             "Original Duration (Days)": 213,
             "% Complete": 30,
-            "BAC (₱)": 5800000,
-            "AC (₱)": 2100000,
+            "BAC (₱)": 5800000.0,
+            "AC (₱)": 2100000.0,
             "Total Float (Days)": 0,
             "Is Critical Path": True,
         },
@@ -203,11 +204,11 @@ def get_mock_project_data():
             "Planned Start": "2026-08-01",
             "Planned Finish": "2026-12-31",
             "Actual Start": "2026-08-10",
-            "Actual Finish": "",
+            "Actual Finish": None,
             "Original Duration (Days)": 152,
             "% Complete": 10,
-            "BAC (₱)": 3100000,
-            "AC (₱)": 400000,
+            "BAC (₱)": 3100000.0,
+            "AC (₱)": 400000.0,
             "Total Float (Days)": 10,
             "Is Critical Path": False,
         },
@@ -222,12 +223,12 @@ def get_mock_project_data():
             "Baseline Finish": "2027-02-15",
             "Planned Start": "2026-12-01",
             "Planned Finish": "2027-02-15",
-            "Actual Start": "",
-            "Actual Finish": "",
+            "Actual Start": None,
+            "Actual Finish": None,
             "Original Duration (Days)": 76,
             "% Complete": 0,
-            "BAC (₱)": 800000,
-            "AC (₱)": 0,
+            "BAC (₱)": 800000.0,
+            "AC (₱)": 0.0,
             "Total Float (Days)": 0,
             "Is Critical Path": True,
         },
@@ -243,11 +244,11 @@ def get_mock_project_data():
             "Planned Start": "2026-01-15",
             "Planned Finish": "2026-04-15",
             "Actual Start": "2026-01-15",
-            "Actual Finish": "",
+            "Actual Finish": None,
             "Original Duration (Days)": 90,
             "% Complete": 90,
-            "BAC (₱)": 800000,
-            "AC (₱)": 850000,
+            "BAC (₱)": 800000.0,
+            "AC (₱)": 850000.0,
             "Total Float (Days)": 0,
             "Is Critical Path": True,
         },
@@ -263,11 +264,11 @@ def get_mock_project_data():
             "Planned Start": "2026-04-01",
             "Planned Finish": "2026-09-30",
             "Actual Start": "2026-04-05",
-            "Actual Finish": "",
+            "Actual Finish": None,
             "Original Duration (Days)": 182,
             "% Complete": 40,
-            "BAC (₱)": 3500000,
-            "AC (₱)": 1600000,
+            "BAC (₱)": 3500000.0,
+            "AC (₱)": 1600000.0,
             "Total Float (Days)": 0,
             "Is Critical Path": True,
         },
@@ -283,11 +284,11 @@ def get_mock_project_data():
             "Planned Start": "2026-05-01",
             "Planned Finish": "2026-11-15",
             "Actual Start": "2026-05-10",
-            "Actual Finish": "",
+            "Actual Finish": None,
             "Original Duration (Days)": 198,
             "% Complete": 25,
-            "BAC (₱)": 2800000,
-            "AC (₱)": 900000,
+            "BAC (₱)": 2800000.0,
+            "AC (₱)": 900000.0,
             "Total Float (Days)": 20,
             "Is Critical Path": False,
         },
@@ -431,6 +432,10 @@ def get_mock_project_data():
     ]
 
     df_act = pd.DataFrame(activities_data)
+    date_cols = ["Baseline Start", "Baseline Finish", "Planned Start", "Planned Finish", "Actual Start", "Actual Finish"]
+    for col in date_cols:
+        df_act[col] = pd.to_datetime(df_act[col], errors="coerce").dt.date
+
     df_act["Baseline BAC (₱)"] = df_act["BAC (₱)"]
 
     return (
@@ -578,20 +583,23 @@ with tab1:
     )
 
     editor_df = filtered_df.copy()
-    for col in [
-        "Baseline Start",
-        "Baseline Finish",
-        "Planned Start",
-        "Planned Finish",
-        "Actual Start",
-        "Actual Finish",
-    ]:
+    date_cols = ["Baseline Start", "Baseline Finish", "Planned Start", "Planned Finish", "Actual Start", "Actual Finish"]
+    for col in date_cols:
         if col in editor_df.columns:
-            editor_df[col] = (
-                pd.to_datetime(editor_df[col], errors="coerce")
-                .dt.strftime("%Y-%m-%d")
-                .fillna("")
-            )
+            editor_df[col] = pd.to_datetime(editor_df[col], errors="coerce").dt.date
+
+    # Interactive Grid with Date Picker configuration for interactive calendar view
+    column_config = {
+        "Baseline Start": st.column_config.DateColumn("Baseline Start", format="YYYY-MM-DD"),
+        "Baseline Finish": st.column_config.DateColumn("Baseline Finish", format="YYYY-MM-DD"),
+        "Planned Start": st.column_config.DateColumn("Planned Start", format="YYYY-MM-DD"),
+        "Planned Finish": st.column_config.DateColumn("Planned Finish", format="YYYY-MM-DD"),
+        "Actual Start": st.column_config.DateColumn("Actual Start", format="YYYY-MM-DD"),
+        "Actual Finish": st.column_config.DateColumn("Actual Finish", format="YYYY-MM-DD"),
+        "BAC (₱)": st.column_config.NumberColumn("BAC (₱)", format="₱%.2f"),
+        "AC (₱)": st.column_config.NumberColumn("AC (₱)", format="₱%.2f"),
+        "% Complete": st.column_config.NumberColumn("% Complete", min_value=0, max_value=100, step=1, format="%d%%"),
+    }
 
     edited_df = st.data_editor(
         editor_df[[
@@ -611,6 +619,7 @@ with tab1:
             "AC (₱)",
             "Contractor",
         ]],
+        column_config=column_config,
         num_rows="dynamic",
         use_container_width=True,
         key="activity_editor",
@@ -621,6 +630,12 @@ with tab1:
             st.session_state.df_activities["Project"] != selected_project
         ]
         edited_df["Project"] = selected_project
+        
+        # Ensure date types persist correctly upon save
+        for col in date_cols:
+            if col in edited_df.columns:
+                edited_df[col] = pd.to_datetime(edited_df[col], errors="coerce").dt.date
+
         st.session_state.df_activities = pd.concat(
             [other_projects_df, edited_df], ignore_index=True
         )
