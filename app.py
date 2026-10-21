@@ -105,8 +105,8 @@ def get_mock_project_data():
             "Planned Finish": "2026-02-15",
             "Original Duration (Days)": 41,
             "% Complete": 100,
-            "BAC ($)": 150000,
-            "AC ($)": 145000,
+            "BAC (₱)": 150000,
+            "AC (₱)": 145000,
             "Total Float (Days)": 0,
             "Is Critical Path": True,
         },
@@ -121,8 +121,8 @@ def get_mock_project_data():
             "Planned Finish": "2026-04-30",
             "Original Duration (Days)": 73,
             "% Complete": 85,
-            "BAC ($)": 450000,
-            "AC ($)": 410000,
+            "BAC (₱)": 450000,
+            "AC (₱)": 410000,
             "Total Float (Days)": 0,
             "Is Critical Path": True,
         },
@@ -137,8 +137,8 @@ def get_mock_project_data():
             "Planned Finish": "2026-08-31",
             "Original Duration (Days)": 183,
             "% Complete": 50,
-            "BAC ($)": 2200000,
-            "AC ($)": 1300000,
+            "BAC (₱)": 2200000,
+            "AC (₱)": 1300000,
             "Total Float (Days)": 15,
             "Is Critical Path": False,
         },
@@ -153,8 +153,8 @@ def get_mock_project_data():
             "Planned Finish": "2026-11-30",
             "Original Duration (Days)": 213,
             "% Complete": 30,
-            "BAC ($)": 5800000,
-            "AC ($)": 2100000,
+            "BAC (₱)": 5800000,
+            "AC (₱)": 2100000,
             "Total Float (Days)": 0,
             "Is Critical Path": True,
         },
@@ -169,8 +169,8 @@ def get_mock_project_data():
             "Planned Finish": "2026-12-31",
             "Original Duration (Days)": 152,
             "% Complete": 10,
-            "BAC ($)": 3100000,
-            "AC ($)": 400000,
+            "BAC (₱)": 3100000,
+            "AC (₱)": 400000,
             "Total Float (Days)": 10,
             "Is Critical Path": False,
         },
@@ -185,8 +185,8 @@ def get_mock_project_data():
             "Planned Finish": "2027-02-15",
             "Original Duration (Days)": 76,
             "% Complete": 0,
-            "BAC ($)": 800000,
-            "AC ($)": 0,
+            "BAC (₱)": 800000,
+            "AC (₱)": 0,
             "Total Float (Days)": 0,
             "Is Critical Path": True,
         },
@@ -201,8 +201,8 @@ def get_mock_project_data():
             "Planned Finish": "2026-04-15",
             "Original Duration (Days)": 90,
             "% Complete": 90,
-            "BAC ($)": 800000,
-            "AC ($)": 850000,
+            "BAC (₱)": 800000,
+            "AC (₱)": 850000,
             "Total Float (Days)": 0,
             "Is Critical Path": True,
         },
@@ -217,8 +217,8 @@ def get_mock_project_data():
             "Planned Finish": "2026-09-30",
             "Original Duration (Days)": 182,
             "% Complete": 40,
-            "BAC ($)": 3500000,
-            "AC ($)": 1600000,
+            "BAC (₱)": 3500000,
+            "AC (₱)": 1600000,
             "Total Float (Days)": 0,
             "Is Critical Path": True,
         },
@@ -233,8 +233,8 @@ def get_mock_project_data():
             "Planned Finish": "2026-11-15",
             "Original Duration (Days)": 198,
             "% Complete": 25,
-            "BAC ($)": 2800000,
-            "AC ($)": 900000,
+            "BAC (₱)": 2800000,
+            "AC (₱)": 900000,
             "Total Float (Days)": 20,
             "Is Critical Path": False,
         },
@@ -378,10 +378,9 @@ def get_mock_project_data():
     ]
 
     df_act = pd.DataFrame(activities_data)
-    # Establish Baseline Snapshot (Baseline Start, Finish, and BAC)
     df_act["Baseline Start"] = df_act["Planned Start"]
     df_act["Baseline Finish"] = df_act["Planned Finish"]
-    df_act["Baseline BAC ($)"] = df_act["BAC ($)"]
+    df_act["Baseline BAC (₱)"] = df_act["BAC (₱)"]
 
     return (
         df_act,
@@ -524,11 +523,17 @@ with tab1:
         "📝 Activity Data Editor (Baseline & Cost Tracking Grid)"
     )
     st.caption(
-        "Update project values, durations, actual costs ($), and completion rates."
+        "Update project values, durations, actual costs (₱), and completion rates."
     )
 
+    # Format dates as strings (YYYY-MM-DD) to hide timestamps in data editor
+    editor_df = filtered_df.copy()
+    for col in ["Baseline Start", "Baseline Finish", "Planned Start", "Planned Finish"]:
+        if col in editor_df.columns:
+            editor_df[col] = pd.to_datetime(editor_df[col]).dt.strftime("%Y-%m-%d")
+
     edited_df = st.data_editor(
-        filtered_df[[
+        editor_df[[
             "Activity ID",
             "WBS Code",
             "WBS Phase",
@@ -539,8 +544,8 @@ with tab1:
             "Planned Finish",
             "Original Duration (Days)",
             "% Complete",
-            "BAC ($)",
-            "AC ($)",
+            "BAC (₱)",
+            "AC (₱)",
             "Contractor",
         ]],
         num_rows="dynamic",
@@ -569,14 +574,12 @@ with tab2:
         unsafe_allow_html=True,
     )
 
-    # Calculate EVM Metrics from filtered project dataset
-    bac = float(filtered_df["BAC ($)"].sum())
-    filtered_df["EV_Val"] = filtered_df["BAC ($)"] * (
+    bac = float(filtered_df["BAC (₱)"].sum())
+    filtered_df["EV_Val"] = filtered_df["BAC (₱)"] * (
         filtered_df["% Complete"] / 100.0
     )
-    # Planned Value (PV) modeled against baseline progress expectation
     filtered_df["PV_Val"] = (
-        filtered_df["BAC ($)"]
+        filtered_df["BAC (₱)"]
         * np.where(
             filtered_df["% Complete"] > 0,
             np.minimum(filtered_df["% Complete"] + 10, 100),
@@ -587,7 +590,7 @@ with tab2:
 
     ev = float(filtered_df["EV_Val"].sum())
     pv = float(filtered_df["PV_Val"].sum())
-    ac = float(filtered_df["AC ($)"].sum())
+    ac = float(filtered_df["AC (₱)"].sum())
 
     cpi = round(ev / ac, 2) if ac > 0 else 1.00
     spi = round(ev / pv, 2) if pv > 0 else 1.00
@@ -596,12 +599,11 @@ with tab2:
     cv = round(ev - ac, 2)
     sv = round(ev - pv, 2)
 
-    # Top KPI Metric Cards
     k1, k2, k3, k4, k5, k6, k7 = st.columns(7)
-    k1.metric("BAC (Baseline Budget)", f"${bac:,.0f}")
-    k2.metric("PV (Planned Value)", f"${pv:,.0f}")
-    k3.metric("EV (Earned Value)", f"${ev:,.0f}")
-    k4.metric("AC (Actual Cost)", f"${ac:,.0f}")
+    k1.metric("BAC (Baseline Budget)", f"₱{bac:,.0f}")
+    k2.metric("PV (Planned Value)", f"₱{pv:,.0f}")
+    k3.metric("EV (Earned Value)", f"₱{ev:,.0f}")
+    k4.metric("AC (Actual Cost)", f"₱{ac:,.0f}")
     k5.metric(
         "CPI",
         f"{cpi:.2f}",
@@ -614,8 +616,8 @@ with tab2:
     )
     k7.metric(
         "EAC (Forecast)",
-        f"${eac:,.0f}",
-        delta=f"${vac:,.0f}",
+        f"₱{eac:,.0f}",
+        delta=f"₱{vac:,.0f}",
         delta_color="normal",
     )
 
@@ -646,7 +648,6 @@ with tab2:
     st.write("")
     st.subheader("📈 Time-Phased Baseline S-Curve (PV vs EV vs AC)")
 
-    # Dynamic Monthly S-Curve Model spanning project duration
     months = pd.date_range(
         start="2026-01-01", periods=12, freq="MS"
     ).strftime("%Y-%m").tolist()
@@ -697,7 +698,7 @@ with tab2:
     fig_scurve.update_layout(
         title="Baseline Cost Performance Baseline (S-Curve Monitoring)",
         xaxis_title="Timeline (Months)",
-        yaxis_title="Cumulative Cost ($)",
+        yaxis_title="Cumulative Cost (₱)",
         hovermode="x unified",
         height=450,
         margin=dict(l=10, r=10, t=40, b=10),
@@ -810,5 +811,5 @@ with tab4:
 
 st.markdown("---")
 st.caption(
-    "P6 Controls Hub Engine v3.0 | Baseline Monitored & Evaluated for Infrastructure Projects"
+    "P6 Controls Hub Engine v3.1 | Baseline Monitored & Evaluated for Infrastructure Projects"
 )
