@@ -29,9 +29,19 @@ st.markdown(
     }
     .stMetric {
         background-color: #F8FAFC;
-        padding: 10px;
+        padding: 8px 12px;
         border-radius: 8px;
         border: 1px solid #E2E8F0;
+    }
+    /* Fix font truncation inside metric cards */
+    [data-testid="stMetricValue"] {
+        font-size: 1.3rem !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+    }
+    [data-testid="stMetricLabel"] {
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
     }
     .status-ok {
         background-color: #DCFCE7;
@@ -58,6 +68,15 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+
+
+def format_currency_compact(val: float) -> str:
+    """Formats numbers into compact Pesos (e.g., ₱12.50M, ₱450.00K)."""
+    if abs(val) >= 1_000_000:
+        return f"₱{val / 1_000_000:,.2f}M"
+    elif abs(val) >= 1_000:
+        return f"₱{val / 1_000:,.2f}K"
+    return f"₱{val:,.2f}"
 
 
 # ==========================================
@@ -526,7 +545,6 @@ with tab1:
         "Update project values, durations, actual costs (₱), and completion rates."
     )
 
-    # Format dates as strings (YYYY-MM-DD) to hide timestamps in data editor
     editor_df = filtered_df.copy()
     for col in ["Baseline Start", "Baseline Finish", "Planned Start", "Planned Finish"]:
         if col in editor_df.columns:
@@ -596,29 +614,32 @@ with tab2:
     spi = round(ev / pv, 2) if pv > 0 else 1.00
     eac = round(bac / cpi, 2) if cpi > 0 else bac
     vac = round(bac - eac, 2)
-    cv = round(ev - ac, 2)
-    sv = round(ev - pv, 2)
 
-    k1, k2, k3, k4, k5, k6, k7 = st.columns(7)
-    k1.metric("BAC (Baseline Budget)", f"₱{bac:,.0f}")
-    k2.metric("PV (Planned Value)", f"₱{pv:,.0f}")
-    k3.metric("EV (Earned Value)", f"₱{ev:,.0f}")
-    k4.metric("AC (Actual Cost)", f"₱{ac:,.0f}")
-    k5.metric(
-        "CPI",
+    # Clean 2-Row Metric Grid Layout so all numbers fit without truncation
+    r1_col1, r1_col2, r1_col3, r1_col4 = st.columns(4)
+    r1_col1.metric("BAC (Baseline Budget)", format_currency_compact(bac), help=f"Full BAC: ₱{bac:,.2f}")
+    r1_col2.metric("PV (Planned Value)", format_currency_compact(pv), help=f"Full PV: ₱{pv:,.2f}")
+    r1_col3.metric("EV (Earned Value)", format_currency_compact(ev), help=f"Full EV: ₱{ev:,.2f}")
+    r1_col4.metric("AC (Actual Cost)", format_currency_compact(ac), help=f"Full AC: ₱{ac:,.2f}")
+
+    st.write("")
+    r2_col1, r2_col2, r2_col3 = st.columns(3)
+    r2_col1.metric(
+        "CPI (Cost Performance)",
         f"{cpi:.2f}",
-        delta=f"{round((cpi-1)*100,1)}%" if cpi != 1.0 else None,
+        delta=f"{round((cpi-1)*100,1)}%",
     )
-    k6.metric(
-        "SPI",
+    r2_col2.metric(
+        "SPI (Schedule Performance)",
         f"{spi:.2f}",
-        delta=f"{round((spi-1)*100,1)}%" if spi != 1.0 else None,
+        delta=f"{round((spi-1)*100,1)}%",
     )
-    k7.metric(
-        "EAC (Forecast)",
-        f"₱{eac:,.0f}",
-        delta=f"₱{vac:,.0f}",
+    r2_col3.metric(
+        "EAC (Forecast At Completion)",
+        format_currency_compact(eac),
+        delta=format_currency_compact(vac),
         delta_color="normal",
+        help=f"Full Forecast: ₱{eac:,.2f}",
     )
 
     st.markdown("---")
@@ -811,5 +832,5 @@ with tab4:
 
 st.markdown("---")
 st.caption(
-    "P6 Controls Hub Engine v3.1 | Baseline Monitored & Evaluated for Infrastructure Projects"
+    "P6 Controls Hub Engine v3.2 | Baseline Monitored & Evaluated for Infrastructure Projects"
 )
