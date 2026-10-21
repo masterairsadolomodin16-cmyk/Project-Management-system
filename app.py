@@ -156,7 +156,7 @@ def format_currency_compact(val: float) -> str:
 # CPM SCHEDULING ENGINE (INTERACTIVE)
 # ==========================================
 def calculate_cpm_and_float(df: pd.DataFrame) -> pd.DataFrame:
-    """Processes schedule durations, finish dates, and editable critical path status."""
+    """Processes schedule durations, finish dates, and editable critical path status[cite: 1]."""
     df = df.copy()
     
     df["Planned Start"] = pd.to_datetime(df["Planned Start"], errors="coerce")
