@@ -565,15 +565,17 @@ with tab1:
     )
 
     if st.button("💾 Apply Schedule Updates"):
-        for _, row in edited_df.iterrows():
-            act_id = row["Activity ID"]
-            idx_list = st.session_state.df_activities.index[
-                st.session_state.df_activities["Activity ID"] == act_id
-            ].tolist()
-            if idx_list:
-                m_idx = idx_list[0]
-                for col in edited_df.columns:
-                    st.session_state.df_activities.at[m_idx, col] = row[col]
+        # Rebuild master dataframe cleanly without type-checking errors
+        other_projects_df = st.session_state.df_activities[
+            st.session_state.df_activities["Project"] != selected_project
+        ]
+        
+        # Ensure project tag persists on edited rows
+        edited_df["Project"] = selected_project
+        
+        st.session_state.df_activities = pd.concat(
+            [other_projects_df, edited_df], ignore_index=True
+        )
 
         st.success("Schedule adjustments saved & CPM re-computed!")
         st.rerun()
