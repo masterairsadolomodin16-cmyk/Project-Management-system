@@ -79,32 +79,34 @@ def format_currency_compact(val: float) -> str:
 
 
 # ==========================================
-# CPM SCHEDULING ENGINE (FORMULATED)
+# CPM SCHEDULING ENGINE (INTERACTIVE)
 # ==========================================
 def calculate_cpm_and_float(df: pd.DataFrame) -> pd.DataFrame:
-    """Formulates CPM Duration, Finish Dates, Total Float, and Critical Path automatically."""
+    """Processes schedule durations, finish dates, and editable critical path status."""
     df = df.copy()
     
     df["Planned Start"] = pd.to_datetime(df["Planned Start"], errors="coerce")
     df["Planned Finish"] = pd.to_datetime(df["Planned Finish"], errors="coerce")
     df["Original Duration (Days)"] = pd.to_numeric(df["Original Duration (Days)"], errors="coerce")
 
-    # If duration is blank/NaN, calculate from dates
-    mask_nan = df["Original Duration (Days)"].isna() | (df["Original Duration (Days)"] <= 0)
-    if mask_nan.any():
-        df.loc[mask_nan, "Original Duration (Days)"] = (
-            (df["Planned Finish"] - df["Planned Start"]).dt.days
-        ).fillna(1)
+    # If duration is changed, recalculate Planned Finish = Planned Start + Duration
+    mask_valid = df["Original Duration (Days)"].notna() & (df["Original Duration (Days)"] > 0)
+    if mask_valid.any():
+        df.loc[mask_valid, "Planned Finish"] = df.loc[mask_valid, "Planned Start"] + pd.to_timedelta(df.loc[mask_valid, "Original Duration (Days)"], unit="days")
 
-    # Sync Planned Finish = Planned Start + Duration
-    calculated_finish = df["Planned Start"] + pd.to_timedelta(df["Original Duration (Days)"], unit="days")
-    df["Planned Finish"] = calculated_finish
+    # Fallback duration calculation if finish is ahead of start
+    df["Original Duration (Days)"] = (
+        (df["Planned Finish"] - df["Planned Start"]).dt.days
+    ).fillna(1).astype(int)
 
-    df["Original Duration (Days)"] = df["Original Duration (Days)"].astype(int)
     df["Total Float (Days)"] = pd.to_numeric(df.get("Total Float (Days)", 0), errors="coerce").fillna(0).astype(int)
 
-    # Critical Path Logic
-    df["Is Critical Path"] = df["Total Float (Days)"] <= 0
+    # Respect user checkbox input for Critical Path, fallback to Float <= 0 if unassigned
+    if "Is Critical Path" not in df.columns:
+        df["Is Critical Path"] = df["Total Float (Days)"] <= 0
+    else:
+        df["Is Critical Path"] = df["Is Critical Path"].fillna(df["Total Float (Days)"] <= 0).astype(bool)
+
     df["Path Type"] = np.where(df["Is Critical Path"], "Critical Path", "Non-Critical")
 
     return df
@@ -134,6 +136,7 @@ def get_mock_project_data():
             "BAC (₱)": 150000.0,
             "AC (₱)": 145000.0,
             "Total Float (Days)": 0,
+            "Is Critical Path": True,
         },
         {
             "Project": "Freeport Modernization",
@@ -153,6 +156,7 @@ def get_mock_project_data():
             "BAC (₱)": 450000.0,
             "AC (₱)": 410000.0,
             "Total Float (Days)": 0,
+            "Is Critical Path": True,
         },
         {
             "Project": "Freeport Modernization",
@@ -172,6 +176,7 @@ def get_mock_project_data():
             "BAC (₱)": 2200000.0,
             "AC (₱)": 1300000.0,
             "Total Float (Days)": 15,
+            "Is Critical Path": False,
         },
         {
             "Project": "Freeport Modernization",
@@ -191,6 +196,7 @@ def get_mock_project_data():
             "BAC (₱)": 5800000.0,
             "AC (₱)": 2100000.0,
             "Total Float (Days)": 0,
+            "Is Critical Path": True,
         },
         {
             "Project": "Freeport Modernization",
@@ -210,6 +216,7 @@ def get_mock_project_data():
             "BAC (₱)": 3100000.0,
             "AC (₱)": 400000.0,
             "Total Float (Days)": 10,
+            "Is Critical Path": False,
         },
         {
             "Project": "Freeport Modernization",
@@ -229,6 +236,7 @@ def get_mock_project_data():
             "BAC (₱)": 800000.0,
             "AC (₱)": 0.0,
             "Total Float (Days)": 0,
+            "Is Critical Path": True,
         },
         {
             "Project": "SEZ Infrastructure Phasing",
@@ -248,6 +256,7 @@ def get_mock_project_data():
             "BAC (₱)": 800000.0,
             "AC (₱)": 850000.0,
             "Total Float (Days)": 0,
+            "Is Critical Path": True,
         },
         {
             "Project": "SEZ Infrastructure Phasing",
@@ -267,6 +276,7 @@ def get_mock_project_data():
             "BAC (₱)": 3500000.0,
             "AC (₱)": 1600000.0,
             "Total Float (Days)": 0,
+            "Is Critical Path": True,
         },
         {
             "Project": "SEZ Infrastructure Phasing",
@@ -286,6 +296,7 @@ def get_mock_project_data():
             "BAC (₱)": 2800000.0,
             "AC (₱)": 900000.0,
             "Total Float (Days)": 20,
+            "Is Critical Path": False,
         },
     ]
 
@@ -501,7 +512,7 @@ st.sidebar.download_button(
 # ==========================================
 st.title(f"📊 Project Controls: {selected_project}")
 st.caption(
-    "Enterprise Primavera P6 Analytics Engine — Auto-Calculated Duration & Finish Engine"
+    "Enterprise Primavera P6 Analytics Engine — Interactive Duration-Driven Schedule Grid"
 )
 
 tab1, tab2, tab3, tab4 = st.tabs(
@@ -577,7 +588,7 @@ with tab1:
         "📝 Activity Data Editor (Baseline, Actuals & Cost Tracking Grid)"
     )
     st.caption(
-        "Edit 'Original Duration (Days)' or 'Planned Start', then click **Apply Schedule Updates** below to auto-calculate Planned Finish dates and Critical Path."
+        "Edit 'Original Duration', 'Planned Start', or check/uncheck 'Is Critical Path?', then click **Apply Schedule Updates** below."
     )
 
     editor_df = filtered_df.copy()
@@ -590,13 +601,13 @@ with tab1:
         "Baseline Start": st.column_config.DateColumn("Baseline Start", format="YYYY-MM-DD"),
         "Baseline Finish": st.column_config.DateColumn("Baseline Finish", format="YYYY-MM-DD"),
         "Planned Start": st.column_config.DateColumn("Planned Start", format="YYYY-MM-DD"),
-        "Planned Finish": st.column_config.DateColumn("Planned Finish", format="YYYY-MM-DD", help="Auto-calculated from Start + Duration upon applying updates"),
+        "Planned Finish": st.column_config.DateColumn("Planned Finish", format="YYYY-MM-DD", help="Recalculated automatically upon applying updates"),
         "Actual Start": st.column_config.DateColumn("Actual Start", format="YYYY-MM-DD"),
         "Actual Finish": st.column_config.DateColumn("Actual Finish", format="YYYY-MM-DD"),
         "Original Duration (Days)": st.column_config.NumberColumn("Original Duration (Days)", format="%d", help="Enter days to automatically push Planned Finish"),
-        "Total Float (Days)": st.column_config.NumberColumn("Total Float (Days)", format="%d", help="Float <= 0 sets Critical Path"),
+        "Total Float (Days)": st.column_config.NumberColumn("Total Float (Days)", format="%d"),
         "Path Type": st.column_config.TextColumn("CPM Path Type", disabled=True),
-        "Is Critical Path": st.column_config.CheckboxColumn("Is Critical Path?", disabled=True),
+        "Is Critical Path": st.column_config.CheckboxColumn("Is Critical Path?", help="Check to set activity as Critical Path"),
         "BAC (₱)": st.column_config.NumberColumn("BAC (₱)", format="₱%.2f"),
         "AC (₱)": st.column_config.NumberColumn("AC (₱)", format="₱%.2f"),
         "% Complete": st.column_config.NumberColumn("% Complete", min_value=0, max_value=100, step=1, format="%d%%"),
@@ -639,13 +650,13 @@ with tab1:
             if col in edited_df.columns:
                 edited_df[col] = pd.to_datetime(edited_df[col], errors="coerce").dt.date
 
-        # Recalculate duration-driven schedule formulas
+        # Recalculate schedule formulas & critical path checkboxes
         recalculated_df = calculate_cpm_and_float(edited_df)
 
         st.session_state.df_activities = pd.concat(
             [other_projects_df, recalculated_df], ignore_index=True
         )
-        st.success("Duration-driven schedule recalculated & saved successfully!")
+        st.success("Interactive schedule updated & saved successfully!")
         st.rerun()
 
 
@@ -936,5 +947,5 @@ with tab4:
 
 st.markdown("---")
 st.caption(
-    "P6 Controls Hub Engine v6.2 | Fully Formulated Duration & Finish Engine"
+    "P6 Controls Hub Engine v6.3 | Interactive Checkbox & Duration-Driven Engine Active"
 )
