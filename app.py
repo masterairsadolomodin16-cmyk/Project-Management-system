@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 # ==========================================
-# PAGE CONFIGURATION
+# PAGE CONFIGURATION & DESIGN SYSTEM
 # ==========================================
 st.set_page_config(
     page_title="P6 Primavera Pro - Project Controls Hub",
@@ -19,49 +19,123 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    .main-header {
-        font-size: 24px;
-        font-weight: bold;
-        color: #1E3A8A;
-        border-bottom: 2px solid #1E3A8A;
-        padding-bottom: 5px;
-        margin-bottom: 15px;
+    /* Orbit Admin Inspired Design System */
+    :root {
+        --blue: #3467eb;
+        --orange: #ff8a3d;
+        --ink: #17233c;
+        --muted: #7d889f;
+        --line: #e9edf5;
+        --page: #f5f7fc;
+        --green: #18a879;
+        --sidebar: #172746;
     }
+
+    .stApp {
+        background-color: var(--page);
+        color: var(--ink);
+        font-family: 'Inter', Arial, sans-serif;
+    }
+
+    /* Sidebar Styling */
+    [data-testid="stSidebar"] {
+        background-color: var(--sidebar);
+        color: #ffffff;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    [data-testid="stSidebar"] .stMarkdown h1, 
+    [data-testid="stSidebar"] .stMarkdown h2, 
+    [data-testid="stSidebar"] .stMarkdown h3,
+    [data-testid="stSidebar"] label {
+        color: #b7c3db !important;
+    }
+
+    /* Modern Headers */
+    .main-header {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--ink);
+        letter-spacing: -0.5px;
+        border-bottom: 2px solid var(--line);
+        padding-bottom: 8px;
+        margin-bottom: 20px;
+    }
+
+    /* Metric Cards */
     .stMetric {
-        background-color: #F8FAFC;
-        padding: 8px 12px;
-        border-radius: 8px;
-        border: 1px solid #E2E8F0;
+        background: white;
+        padding: 16px 18px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        box-shadow: 0 4px 16px rgba(35, 58, 101, 0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .stMetric:hover {
+        box-shadow: 0 6px 20px rgba(35, 58, 101, 0.08);
     }
     [data-testid="stMetricValue"] {
-        font-size: 1.3rem !important;
+        font-size: 1.5rem !important;
+        font-weight: 800 !important;
+        color: var(--ink) !important;
         white-space: nowrap !important;
-        overflow: visible !important;
     }
     [data-testid="stMetricLabel"] {
-        font-size: 0.85rem !important;
-        font-weight: 600 !important;
+        font-size: 0.8rem !important;
+        font-weight: 700 !important;
+        color: var(--muted) !important;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
     }
+
+    /* Status Badges */
     .status-ok {
-        background-color: #DCFCE7;
-        color: #166534;
-        padding: 8px 12px;
-        border-radius: 6px;
-        font-weight: bold;
+        background-color: #e8f8f1;
+        color: #15966b;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 13px;
+        border: 1px solid #d1f2e3;
     }
     .status-warn {
-        background-color: #FEF9C3;
-        color: #854D0E;
-        padding: 8px 12px;
-        border-radius: 6px;
-        font-weight: bold;
+        background-color: #fff4e5;
+        color: #c67a22;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 13px;
+        border: 1px solid #ffe3c4;
     }
     .status-alert {
-        background-color: #FEE2E2;
-        color: #991B1B;
-        padding: 8px 12px;
-        border-radius: 6px;
-        font-weight: bold;
+        background-color: #fff0f1;
+        color: #d45061;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 13px;
+        border: 1px solid #ffd6dc;
+    }
+
+    /* Tabs Styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: transparent;
+        padding-bottom: 10px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 42px;
+        border-radius: 10px;
+        background-color: white;
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font-weight: 700;
+        font-size: 12px;
+        padding: 0 16px;
+    }
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(100deg, #3467eb, #4777f3) !important;
+        color: white !important;
+        border: none !important;
     }
     </style>
 """,
@@ -89,19 +163,16 @@ def calculate_cpm_and_float(df: pd.DataFrame) -> pd.DataFrame:
     df["Planned Finish"] = pd.to_datetime(df["Planned Finish"], errors="coerce")
     df["Original Duration (Days)"] = pd.to_numeric(df["Original Duration (Days)"], errors="coerce")
 
-    # If duration is changed, recalculate Planned Finish = Planned Start + Duration
     mask_valid = df["Original Duration (Days)"].notna() & (df["Original Duration (Days)"] > 0)
     if mask_valid.any():
         df.loc[mask_valid, "Planned Finish"] = df.loc[mask_valid, "Planned Start"] + pd.to_timedelta(df.loc[mask_valid, "Original Duration (Days)"], unit="days")
 
-    # Fallback duration calculation if finish is ahead of start
     df["Original Duration (Days)"] = (
         (df["Planned Finish"] - df["Planned Start"]).dt.days
     ).fillna(1).astype(int)
 
     df["Total Float (Days)"] = pd.to_numeric(df.get("Total Float (Days)", 0), errors="coerce").fillna(0).astype(int)
 
-    # Respect user checkbox input for Critical Path, fallback to Float <= 0 if unassigned
     if "Is Critical Path" not in df.columns:
         df["Is Critical Path"] = df["Total Float (Days)"] <= 0
     else:
@@ -464,12 +535,14 @@ if "df_activities" not in st.session_state:
 # ==========================================
 # SIDEBAR CONTROLS & NAVIGATION
 # ==========================================
-st.sidebar.title("🏗️ P6 Controls Engine")
+st.sidebar.markdown("### ✦ orbit.admin")
+st.sidebar.markdown("#### P6 Controls Engine")
+st.sidebar.markdown("---")
 
 projects = st.session_state.df_activities["Project"].unique().tolist()
 selected_project = st.sidebar.selectbox("Select Project Workspace", projects)
 
-st.sidebar.subheader("🔍 Filters")
+st.sidebar.markdown("#### 🔍 Filters")
 project_activities = st.session_state.df_activities[
     st.session_state.df_activities["Project"] == selected_project
 ]
@@ -489,7 +562,7 @@ if selected_contractor != "All":
 filtered_df = calculate_cpm_and_float(filtered_df)
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("💾 Data Management")
+st.sidebar.markdown("#### 💾 Data Management")
 
 output = io.BytesIO()
 with pd.ExcelWriter(output, engine="openpyxl") as writer:
@@ -510,7 +583,7 @@ st.sidebar.download_button(
 # ==========================================
 # MAIN APPLICATION INTERFACE
 # ==========================================
-st.title(f"📊 Project Controls: {selected_project}")
+st.title(f"Project Controls: {selected_project}")
 st.caption(
     "Enterprise Primavera P6 Analytics Engine — Interactive Duration-Driven Schedule Grid"
 )
@@ -546,7 +619,7 @@ with tab1:
     if not view_df.empty:
         color_discrete_map = {
             "Critical Path": "#E11D48",
-            "Non-Critical": "#2563EB"
+            "Non-Critical": "#3467EB"
         }
 
         fig_gantt = px.timeline(
@@ -579,6 +652,8 @@ with tab1:
                 xanchor="right",
                 x=1,
             ),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
         )
         st.plotly_chart(fig_gantt, use_container_width=True)
     else:
@@ -640,7 +715,7 @@ with tab1:
         key="activity_editor",
     )
 
-    if st.button("💾 Apply Schedule, Actuals & Baseline Updates"):
+    if st.button("💾 Apply Schedule, Actuals & Baseline Updates", type="primary"):
         other_projects_df = st.session_state.df_activities[
             st.session_state.df_activities["Project"] != selected_project
         ]
@@ -650,7 +725,6 @@ with tab1:
             if col in edited_df.columns:
                 edited_df[col] = pd.to_datetime(edited_df[col], errors="coerce").dt.date
 
-        # Recalculate schedule formulas & critical path checkboxes
         recalculated_df = calculate_cpm_and_float(edited_df)
 
         st.session_state.df_activities = pd.concat(
@@ -788,7 +862,7 @@ with tab2:
             y=scurve_df["Planned Value (PV Baseline)"],
             mode="lines+markers",
             name="Planned Value (PV Baseline)",
-            line=dict(color="#2563EB", width=3),
+            line=dict(color="#3467EB", width=3),
         )
     )
     fig_scurve.add_trace(
@@ -797,7 +871,7 @@ with tab2:
             y=scurve_df["Earned Value (EV)"],
             mode="lines+markers",
             name="Earned Value (EV)",
-            line=dict(color="#16A34A", width=3),
+            line=dict(color="#18A879", width=3),
         )
     )
     fig_scurve.add_trace(
@@ -806,7 +880,7 @@ with tab2:
             y=scurve_df["Actual Cost (AC)"],
             mode="lines+markers",
             name="Actual Cost (AC)",
-            line=dict(color="#DC2626", width=3, dash="dash"),
+            line=dict(color="#D45061", width=3, dash="dash"),
         )
     )
 
@@ -838,6 +912,8 @@ with tab2:
         hovermode="x unified",
         height=450,
         margin=dict(l=10, r=10, t=40, b=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
     )
     st.plotly_chart(fig_scurve, use_container_width=True)
 
@@ -874,8 +950,8 @@ with tab3:
                 marker_color=np.where(
                     filtered_res["Allocated Hours"]
                     > filtered_res["Capacity Limit"],
-                    "#EF4444",
-                    "#3B82F6",
+                    "#D45061",
+                    "#3467EB",
                 ),
             )
         )
@@ -884,7 +960,7 @@ with tab3:
                 x=filtered_res["Month"],
                 y=filtered_res["Capacity Limit"],
                 name="Max Monthly Capacity Limit",
-                line=dict(color="#F59E0B", width=3, dash="dot"),
+                line=dict(color="#FF8A3D", width=3, dash="dot"),
             )
         )
 
@@ -895,6 +971,8 @@ with tab3:
             barmode="group",
             height=400,
             margin=dict(l=10, r=10, t=40, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
         )
         st.plotly_chart(fig_res, use_container_width=True)
         st.dataframe(filtered_res, use_container_width=True)
@@ -947,5 +1025,5 @@ with tab4:
 
 st.markdown("---")
 st.caption(
-    "P6 Controls Hub Engine v6.3 | Interactive Checkbox & Duration-Driven Engine Active"
+    "P6 Controls Hub Engine v6.3 | Orbit Admin Design System Integration Active"
 )
