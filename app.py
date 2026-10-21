@@ -89,7 +89,6 @@ def calculate_cpm_and_float(df: pd.DataFrame) -> pd.DataFrame:
     df["Late Start"] = df["Early Start"]
 
     # Simplified Total Float Calculation (Base Float = Late Finish - Early Finish)
-    # For user-edited schedules, float is computed dynamically against target milestones
     df["Total Float (Days)"] = (
         (df["Late Finish"] - df["Early Finish"]).dt.days
     ).fillna(0)
@@ -520,7 +519,6 @@ with tab1:
 
     # Dynamic Plotly Gantt Chart
     if not view_df.empty:
-        # Define color scheme: Red/Orange for Critical Path, Blue for non-critical
         color_discrete_map = {True: "#E11D48", False: "#2563EB"}
         
         fig_gantt = px.timeline(
@@ -533,15 +531,14 @@ with tab1:
             hover_data=["Activity ID", "WBS Code", "% Complete", "Total Float (Days)", "Contractor"],
             title=f"Master Timeline Schedule — {selected_project}"
         )
-        fig_gantt.update_yaxes(autorange="reversed")  # Standard P6 layout top-to-bottom
+        fig_gantt.update_yaxes(autorange="reversed")
         fig_gantt.update_layout(
             xaxis_title="Timeline",
             yaxis_title="Activity Description",
             height=400,
             margin=dict(l=10, r=10, t=40, b=10),
             legend=dict(
-                title="Path Status",
-                labels={"True": "Critical Path (Float ≤ 0)", "False": "Non-Critical"},
+                title=dict(text="Path Status"),
                 orientation="h",
                 yanchor="bottom",
                 y=1.02,
@@ -556,7 +553,6 @@ with tab1:
     st.subheader("📝 Activity Data Editor (Interactive Primavera Grid)")
     st.caption("Double-click any cell to update durations, completion rates, or dates in real-time.")
 
-    # Native Editable Data Table
     edited_df = st.data_editor(
         filtered_df[[
             "Activity ID", "WBS Code", "WBS Phase", "Activity Name", 
@@ -568,9 +564,7 @@ with tab1:
         key="activity_editor"
     )
 
-    # Save edits back to global state
     if st.button("💾 Apply Schedule Updates"):
-        # Update session state with modified subset
         st.session_state.df_activities.update(edited_df)
         st.success("Schedule adjustments saved & CPM re-computed!")
         st.rerun()
@@ -582,25 +576,20 @@ with tab1:
 with tab2:
     st.markdown('<div class="main-header">Earned Value Management (EVM) Metrics</div>', unsafe_allow_html=True)
 
-    # EVM Core Metrics Calculation
     bac = float(filtered_df["BAC ($)"].sum())
     
-    # Calculate weighted EV & PV based on progress
     filtered_df["EV_Val"] = filtered_df["BAC ($)"] * (filtered_df["% Complete"] / 100.0)
-    # Estimate PV dynamically from planned progress timeframe
     filtered_df["PV_Val"] = filtered_df["BAC ($)"] * np.where(filtered_df["% Complete"] > 0, np.minimum(filtered_df["% Complete"] + 15, 100), 0) / 100.0
     
     ev = float(filtered_df["EV_Val"].sum())
     pv = float(filtered_df["PV_Val"].sum())
     ac = float(filtered_df["AC ($)"].sum())
 
-    # Performance Indices
     cpi = round(ev / ac, 2) if ac > 0 else 1.00
     spi = round(ev / pv, 2) if pv > 0 else 1.00
     eac = round(bac / cpi, 2) if cpi > 0 else bac
     vac = round(bac - eac, 2)
 
-    # Top KPI Metrics Cards Layout
     kpi_col1, kpi_col2, kpi_col3, kpi_col4, kpi_col5, kpi_col6, kpi_col7 = st.columns(7)
     kpi_col1.metric("BAC (Budget)", f"${bac:,.0f}")
     kpi_col2.metric("PV (Planned)", f"${pv:,.0f}")
@@ -612,7 +601,6 @@ with tab2:
 
     st.markdown("---")
 
-    # EVM Executive Automated Interpretation Banner
     st.subheader("📌 Project Health Analysis")
     if cpi >= 1.0 and spi >= 1.0:
         st.markdown('<div class="status-ok">✅ Project is ON SCHEDULE and WITHIN BUDGET.</div>', unsafe_allow_html=True)
@@ -625,18 +613,14 @@ with tab2:
 
     st.write("")
 
-    # Time-Phased S-Curve Data Modeling
     st.subheader("📈 Time-Phased EVM Performance S-Curve")
     
-    # Generate 12-month synthetic timeline baseline for S-curve plotting
     months = pd.date_range(start="2026-01-01", periods=12, freq="MS").strftime("%Y-%m").tolist()
     
-    # Generate realistic cumulative curve progressions
     cum_pv = np.cumsum(np.linspace(bac * 0.05, bac * 0.15, 12))
     cum_ev = cum_pv * (spi if spi > 0 else 0.9)
     cum_ac = cum_ev / (cpi if cpi > 0 else 1.1)
 
-    # Limit actual curves up to current period (Month 6)
     current_month_idx = 6
     cum_ev[current_month_idx:] = np.nan
     cum_ac[current_month_idx:] = np.nan
@@ -682,10 +666,8 @@ with tab3:
 
         filtered_res = res_df[res_df["Resource Type"] == selected_res_type]
 
-        # Resource Histogram with Capacity Limit Overlay
         fig_res = go.Figure()
 
-        # Bar chart for Allocated Hours
         fig_res.add_trace(go.Bar(
             x=filtered_res["Month"],
             y=filtered_res["Allocated Hours"],
@@ -693,7 +675,6 @@ with tab3:
             marker_color=np.where(filtered_res["Allocated Hours"] > filtered_res["Capacity Limit"], '#EF4444', '#3B82F6')
         ))
 
-        # Line chart for Maximum Capacity Limit
         fig_res.add_trace(go.Scatter(
             x=filtered_res["Month"],
             y=filtered_res["Capacity Limit"],
@@ -716,7 +697,7 @@ with tab3:
         over_allocated = filtered_res[filtered_res["Allocated Hours"] > filtered_res["Capacity Limit"]]
         
         if not over_allocated.empty:
-            st.error(f"⚠️ Over-allocation detected for {selected_res_type} in {len(over_allocated)} period(s)! Consider resource leveling or shifting non-critical path tasks.")
+            st.error(f"⚠️ Over-allocation detected for {selected_res_type} in {len(over_allocated)} period(s)! Consider resource leveling.")
         else:
             st.success(f"✅ Resource loading for {selected_res_type} is within normal capacity limits.")
 
@@ -764,7 +745,6 @@ with tab4:
         if not risk_df.empty:
             risk_df["Risk Score"] = risk_df["Probability (1-5)"] * risk_df["Impact (1-5)"]
             
-            # Interactive Plotly Risk Heatmap scatter plot
             fig_risk = px.scatter(
                 risk_df,
                 x="Probability (1-5)",
@@ -792,6 +772,5 @@ with tab4:
     else:
         st.info("No active risks logged.")
 
-# Footer
 st.markdown("---")
 st.caption("P6 Controls Hub Engine v2.4 | Powered by Streamlit, Pandas CPM, and Plotly Graphics")
