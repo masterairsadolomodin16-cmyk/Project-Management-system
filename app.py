@@ -79,7 +79,7 @@ def format_currency_compact(val: float) -> str:
 
 
 # ==========================================
-# CPM SCHEDULING ENGINE (DURATION DRriven)
+# CPM SCHEDULING ENGINE (FORMULATED)
 # ==========================================
 def calculate_cpm_and_float(df: pd.DataFrame) -> pd.DataFrame:
     """Formulates CPM Duration, Finish Dates, Total Float, and Critical Path automatically."""
@@ -87,19 +87,20 @@ def calculate_cpm_and_float(df: pd.DataFrame) -> pd.DataFrame:
     
     df["Planned Start"] = pd.to_datetime(df["Planned Start"], errors="coerce")
     df["Planned Finish"] = pd.to_datetime(df["Planned Finish"], errors="coerce")
-    
-    # If duration was edited, recalculate Planned Finish = Planned Start + Duration
-    if "Original Duration (Days)" in df.columns:
-        df["Original Duration (Days)"] = pd.to_numeric(df["Original Duration (Days)"], errors="coerce").fillna(0).astype(int)
-        # Recalculate Planned Finish based on Planned Start + Duration days
-        calculated_finish = df["Planned Start"] + pd.to_timedelta(df["Original Duration (Days)"], unit="days")
-        df["Planned Finish"] = np.where(df["Original Duration (Days)"] > 0, calculated_finish, df["Planned Finish"])
+    df["Original Duration (Days)"] = pd.to_numeric(df["Original Duration (Days)"], errors="coerce")
 
-    # Fallback duration calculation if finish is ahead of start
-    df["Original Duration (Days)"] = (
-        (df["Planned Finish"] - df["Planned Start"]).dt.days
-    ).fillna(0).astype(int)
+    # If duration is blank/NaN, calculate from dates
+    mask_nan = df["Original Duration (Days)"].isna() | (df["Original Duration (Days)"] <= 0)
+    if mask_nan.any():
+        df.loc[mask_nan, "Original Duration (Days)"] = (
+            (df["Planned Finish"] - df["Planned Start"]).dt.days
+        ).fillna(1)
 
+    # Sync Planned Finish = Planned Start + Duration
+    calculated_finish = df["Planned Start"] + pd.to_timedelta(df["Original Duration (Days)"], unit="days")
+    df["Planned Finish"] = calculated_finish
+
+    df["Original Duration (Days)"] = df["Original Duration (Days)"].astype(int)
     df["Total Float (Days)"] = pd.to_numeric(df.get("Total Float (Days)", 0), errors="coerce").fillna(0).astype(int)
 
     # Critical Path Logic
@@ -500,7 +501,7 @@ st.sidebar.download_button(
 # ==========================================
 st.title(f"📊 Project Controls: {selected_project}")
 st.caption(
-    "Enterprise Primavera P6 Analytics Engine — Duration-Driven Scheduling & Formulated Engine"
+    "Enterprise Primavera P6 Analytics Engine — Auto-Calculated Duration & Finish Engine"
 )
 
 tab1, tab2, tab3, tab4 = st.tabs(
@@ -576,7 +577,7 @@ with tab1:
         "📝 Activity Data Editor (Baseline, Actuals & Cost Tracking Grid)"
     )
     st.caption(
-        "Update Original Duration (Days) to automatically recalculate Planned Finish, or adjust Planned dates directly."
+        "Edit 'Original Duration (Days)' or 'Planned Start', then click **Apply Schedule Updates** below to auto-calculate Planned Finish dates and Critical Path."
     )
 
     editor_df = filtered_df.copy()
@@ -589,10 +590,10 @@ with tab1:
         "Baseline Start": st.column_config.DateColumn("Baseline Start", format="YYYY-MM-DD"),
         "Baseline Finish": st.column_config.DateColumn("Baseline Finish", format="YYYY-MM-DD"),
         "Planned Start": st.column_config.DateColumn("Planned Start", format="YYYY-MM-DD"),
-        "Planned Finish": st.column_config.DateColumn("Planned Finish", format="YYYY-MM-DD", help="Auto-recalculated from Planned Start + Duration"),
+        "Planned Finish": st.column_config.DateColumn("Planned Finish", format="YYYY-MM-DD", help="Auto-calculated from Start + Duration upon applying updates"),
         "Actual Start": st.column_config.DateColumn("Actual Start", format="YYYY-MM-DD"),
         "Actual Finish": st.column_config.DateColumn("Actual Finish", format="YYYY-MM-DD"),
-        "Original Duration (Days)": st.column_config.NumberColumn("Original Duration (Days)", format="%d", help="Changing duration automatically updates Planned Finish!"),
+        "Original Duration (Days)": st.column_config.NumberColumn("Original Duration (Days)", format="%d", help="Enter days to automatically push Planned Finish"),
         "Total Float (Days)": st.column_config.NumberColumn("Total Float (Days)", format="%d", help="Float <= 0 sets Critical Path"),
         "Path Type": st.column_config.TextColumn("CPM Path Type", disabled=True),
         "Is Critical Path": st.column_config.CheckboxColumn("Is Critical Path?", disabled=True),
@@ -633,11 +634,12 @@ with tab1:
             st.session_state.df_activities["Project"] != selected_project
         ]
         edited_df["Project"] = selected_project
+        
         for col in date_cols:
             if col in edited_df.columns:
                 edited_df[col] = pd.to_datetime(edited_df[col], errors="coerce").dt.date
 
-        # Recalculate schedule formulas (Duration -> Planned Finish)
+        # Recalculate duration-driven schedule formulas
         recalculated_df = calculate_cpm_and_float(edited_df)
 
         st.session_state.df_activities = pd.concat(
@@ -934,5 +936,5 @@ with tab4:
 
 st.markdown("---")
 st.caption(
-    "P6 Controls Hub Engine v6.1 | Duration-Driven Schedule Calculation Engine Active"
+    "P6 Controls Hub Engine v6.2 | Fully Formulated Duration & Finish Engine"
 )
