@@ -33,7 +33,6 @@ st.markdown(
         border-radius: 8px;
         border: 1px solid #E2E8F0;
     }
-    /* Fix font truncation inside metric cards */
     [data-testid="stMetricValue"] {
         font-size: 1.3rem !important;
         white-space: nowrap !important;
@@ -71,7 +70,6 @@ st.markdown(
 
 
 def format_currency_compact(val: float) -> str:
-    """Formats numbers into compact Pesos (e.g., ₱12.50M, ₱450.00K)."""
     if abs(val) >= 1_000_000:
         return f"₱{val / 1_000_000:,.2f}M"
     elif abs(val) >= 1_000:
@@ -108,7 +106,7 @@ def calculate_cpm_and_float(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ==========================================
-# SAMPLE DATA GENERATOR & BASELINE SETUP
+# SAMPLE DATA GENERATOR & PROFESSIONAL BASELINE
 # ==========================================
 @st.cache_data
 def get_mock_project_data():
@@ -120,8 +118,12 @@ def get_mock_project_data():
             "WBS Phase": "Engineering & Design",
             "Activity Name": "Site Geotechnical & Topographic Survey",
             "Contractor": "GeoTech Solutions",
+            "Baseline Start": "2026-01-05",
+            "Baseline Finish": "2026-02-15",
             "Planned Start": "2026-01-05",
             "Planned Finish": "2026-02-15",
+            "Actual Start": "2026-01-05",
+            "Actual Finish": "2026-02-15",
             "Original Duration (Days)": 41,
             "% Complete": 100,
             "BAC (₱)": 150000,
@@ -136,8 +138,12 @@ def get_mock_project_data():
             "WBS Phase": "Engineering & Design",
             "Activity Name": "Berth & Container Yard Detailed Design",
             "Contractor": "ArchiTech Global",
+            "Baseline Start": "2026-02-16",
+            "Baseline Finish": "2026-04-30",
             "Planned Start": "2026-02-16",
             "Planned Finish": "2026-04-30",
+            "Actual Start": "2026-02-16",
+            "Actual Finish": "",
             "Original Duration (Days)": 73,
             "% Complete": 85,
             "BAC (₱)": 450000,
@@ -152,8 +158,12 @@ def get_mock_project_data():
             "WBS Phase": "Procurement",
             "Activity Name": "Ship-to-Shore (STS) Crane Procurement",
             "Contractor": "HeavyMachinery Corp",
+            "Baseline Start": "2026-03-01",
+            "Baseline Finish": "2026-08-31",
             "Planned Start": "2026-03-01",
             "Planned Finish": "2026-08-31",
+            "Actual Start": "2026-03-05",
+            "Actual Finish": "",
             "Original Duration (Days)": 183,
             "% Complete": 50,
             "BAC (₱)": 2200000,
@@ -168,8 +178,12 @@ def get_mock_project_data():
             "WBS Phase": "Construction",
             "Activity Name": "Dredging & Quay Wall Construction",
             "Contractor": "MarineBuild LLC",
+            "Baseline Start": "2026-05-01",
+            "Baseline Finish": "2026-11-30",
             "Planned Start": "2026-05-01",
             "Planned Finish": "2026-11-30",
+            "Actual Start": "2026-05-05",
+            "Actual Finish": "",
             "Original Duration (Days)": 213,
             "% Complete": 30,
             "BAC (₱)": 5800000,
@@ -184,8 +198,12 @@ def get_mock_project_data():
             "WBS Phase": "Construction",
             "Activity Name": "Container Yard Paving & Utilities",
             "Contractor": "Civils Unlimited",
+            "Baseline Start": "2026-08-01",
+            "Baseline Finish": "2026-12-31",
             "Planned Start": "2026-08-01",
             "Planned Finish": "2026-12-31",
+            "Actual Start": "2026-08-10",
+            "Actual Finish": "",
             "Original Duration (Days)": 152,
             "% Complete": 10,
             "BAC (₱)": 3100000,
@@ -200,8 +218,12 @@ def get_mock_project_data():
             "WBS Phase": "Commissioning",
             "Activity Name": "System Integration & Terminal Testing",
             "Contractor": "PortSystems Intl",
+            "Baseline Start": "2026-12-01",
+            "Baseline Finish": "2027-02-15",
             "Planned Start": "2026-12-01",
             "Planned Finish": "2027-02-15",
+            "Actual Start": "",
+            "Actual Finish": "",
             "Original Duration (Days)": 76,
             "% Complete": 0,
             "BAC (₱)": 800000,
@@ -216,8 +238,12 @@ def get_mock_project_data():
             "WBS Phase": "Earthworks",
             "Activity Name": "Site Clearing & Bulk Grading",
             "Contractor": "EarthMovers Inc",
+            "Baseline Start": "2026-01-15",
+            "Baseline Finish": "2026-04-15",
             "Planned Start": "2026-01-15",
             "Planned Finish": "2026-04-15",
+            "Actual Start": "2026-01-15",
+            "Actual Finish": "",
             "Original Duration (Days)": 90,
             "% Complete": 90,
             "BAC (₱)": 800000,
@@ -232,8 +258,12 @@ def get_mock_project_data():
             "WBS Phase": "Utilities",
             "Activity Name": "High Voltage Substation Construction",
             "Contractor": "PowerGrid Dynamics",
+            "Baseline Start": "2026-04-01",
+            "Baseline Finish": "2026-09-30",
             "Planned Start": "2026-04-01",
             "Planned Finish": "2026-09-30",
+            "Actual Start": "2026-04-05",
+            "Actual Finish": "",
             "Original Duration (Days)": 182,
             "% Complete": 40,
             "BAC (₱)": 3500000,
@@ -248,8 +278,12 @@ def get_mock_project_data():
             "WBS Phase": "Utilities",
             "Activity Name": "Water Treatment Plant & Piping Network",
             "Contractor": "AquaInfrastructure",
+            "Baseline Start": "2026-05-01",
+            "Baseline Finish": "2026-11-15",
             "Planned Start": "2026-05-01",
             "Planned Finish": "2026-11-15",
+            "Actual Start": "2026-05-10",
+            "Actual Finish": "",
             "Original Duration (Days)": 198,
             "% Complete": 25,
             "BAC (₱)": 2800000,
@@ -397,8 +431,6 @@ def get_mock_project_data():
     ]
 
     df_act = pd.DataFrame(activities_data)
-    df_act["Baseline Start"] = df_act["Planned Start"]
-    df_act["Baseline Finish"] = df_act["Planned Finish"]
     df_act["Baseline BAC (₱)"] = df_act["BAC (₱)"]
 
     return (
@@ -469,7 +501,7 @@ st.sidebar.download_button(
 # ==========================================
 st.title(f"📊 Project Controls: {selected_project}")
 st.caption(
-    "Enterprise Primavera P6 Analytics Engine — Baseline Monitored & Evaluated"
+    "Enterprise Primavera P6 Analytics Engine — Baseline, Actuals, & Performance Monitored"
 )
 
 tab1, tab2, tab3, tab4 = st.tabs(
@@ -486,7 +518,7 @@ tab1, tab2, tab3, tab4 = st.tabs(
 # ------------------------------------------
 with tab1:
     st.markdown(
-        '<div class="main-header">WBS Schedule & Baseline Variance Engine</div>',
+        '<div class="main-header">WBS Schedule & Actual Progress Engine</div>',
         unsafe_allow_html=True,
     )
 
@@ -517,7 +549,7 @@ with tab1:
                 "Total Float (Days)",
                 "Contractor",
             ],
-            title=f"Master Timeline vs Baseline Schedule — {selected_project}",
+            title=f"Master Timeline Schedule — {selected_project}",
         )
         fig_gantt.update_yaxes(autorange="reversed")
         fig_gantt.update_layout(
@@ -539,16 +571,27 @@ with tab1:
         st.warning("No activities match current filter criteria.")
 
     st.subheader(
-        "📝 Activity Data Editor (Baseline & Cost Tracking Grid)"
+        "📝 Activity Data Editor (Baseline, Actuals & Cost Tracking Grid)"
     )
     st.caption(
-        "Update project values, durations, actual costs (₱), and completion rates."
+        "Update Actual Start, Actual Finish, Planned dates, physical % complete, and actual costs (₱)."
     )
 
     editor_df = filtered_df.copy()
-    for col in ["Baseline Start", "Baseline Finish", "Planned Start", "Planned Finish"]:
+    for col in [
+        "Baseline Start",
+        "Baseline Finish",
+        "Planned Start",
+        "Planned Finish",
+        "Actual Start",
+        "Actual Finish",
+    ]:
         if col in editor_df.columns:
-            editor_df[col] = pd.to_datetime(editor_df[col]).dt.strftime("%Y-%m-%d")
+            editor_df[col] = (
+                pd.to_datetime(editor_df[col], errors="coerce")
+                .dt.strftime("%Y-%m-%d")
+                .fillna("")
+            )
 
     edited_df = st.data_editor(
         editor_df[[
@@ -560,6 +603,8 @@ with tab1:
             "Baseline Finish",
             "Planned Start",
             "Planned Finish",
+            "Actual Start",
+            "Actual Finish",
             "Original Duration (Days)",
             "% Complete",
             "BAC (₱)",
@@ -571,7 +616,7 @@ with tab1:
         key="activity_editor",
     )
 
-    if st.button("💾 Apply Schedule & Baseline Updates"):
+    if st.button("💾 Apply Schedule, Actuals & Baseline Updates"):
         other_projects_df = st.session_state.df_activities[
             st.session_state.df_activities["Project"] != selected_project
         ]
@@ -579,7 +624,7 @@ with tab1:
         st.session_state.df_activities = pd.concat(
             [other_projects_df, edited_df], ignore_index=True
         )
-        st.success("Schedule adjustments saved & Baseline variance re-computed!")
+        st.success("Actuals saved & performance metrics re-computed!")
         st.rerun()
 
 
@@ -588,7 +633,7 @@ with tab1:
 # ------------------------------------------
 with tab2:
     st.markdown(
-        '<div class="main-header">Earned Value Management (EVM) Baseline Analytics</div>',
+        '<div class="main-header">Earned Value Management (EVM) Analytics</div>',
         unsafe_allow_html=True,
     )
 
@@ -615,7 +660,6 @@ with tab2:
     eac = round(bac / cpi, 2) if cpi > 0 else bac
     vac = round(bac - eac, 2)
 
-    # Clean 2-Row Metric Grid Layout so all numbers fit without truncation
     r1_col1, r1_col2, r1_col3, r1_col4 = st.columns(4)
     r1_col1.metric("BAC (Baseline Budget)", format_currency_compact(bac), help=f"Full BAC: ₱{bac:,.2f}")
     r1_col2.metric("PV (Planned Value)", format_currency_compact(pv), help=f"Full PV: ₱{pv:,.2f}")
@@ -644,30 +688,30 @@ with tab2:
 
     st.markdown("---")
 
-    st.subheader("📌 Baseline Performance Interpretation")
+    st.subheader("📌 Project Performance Interpretation")
     if cpi >= 1.0 and spi >= 1.0:
         st.markdown(
-            '<div class="status-ok">✅ Project is ON SCHEDULE (SPI ≥ 1) and WITHIN BUDGET (CPI ≥ 1) relative to baseline.</div>',
+            '<div class="status-ok">✅ Project is ON SCHEDULE (SPI ≥ 1) and WITHIN BUDGET (CPI ≥ 1).</div>',
             unsafe_allow_html=True,
         )
     elif cpi < 1.0 and spi >= 1.0:
         st.markdown(
-            '<div class="status-warn">⚠️ Project is ON SCHEDULE but OVER BUDGET (CPI < 1). Cost containment required.</div>',
+            '<div class="status-warn">⚠️ Project is ON SCHEDULE but OVER BUDGET (CPI < 1).</div>',
             unsafe_allow_html=True,
         )
     elif cpi >= 1.0 and spi < 1.0:
         st.markdown(
-            '<div class="status-warn">⚠️ Project is UNDER BUDGET but BEHIND SCHEDULE (SPI < 1). Acceleration required.</div>',
+            '<div class="status-warn">⚠️ Project is UNDER BUDGET but BEHIND SCHEDULE (SPI < 1).</div>',
             unsafe_allow_html=True,
         )
     else:
         st.markdown(
-            '<div class="status-alert">🚨 CRITICAL: Project is BEHIND SCHEDULE and OVER BUDGET compared to baseline metrics.</div>',
+            '<div class="status-alert">🚨 CRITICAL: Project is BEHIND SCHEDULE and OVER BUDGET.</div>',
             unsafe_allow_html=True,
         )
 
     st.write("")
-    st.subheader("📈 Time-Phased Baseline S-Curve (PV vs EV vs AC)")
+    st.subheader("📈 Time-Phased Performance S-Curve (PV vs EV vs AC)")
 
     months = pd.date_range(
         start="2026-01-01", periods=12, freq="MS"
@@ -682,7 +726,7 @@ with tab2:
 
     scurve_df = pd.DataFrame({
         "Month": months,
-        "Planned Value (Baseline PV)": cum_pv,
+        "Planned Value (PV Baseline)": cum_pv,
         "Earned Value (EV)": cum_ev,
         "Actual Cost (AC)": cum_ac,
     })
@@ -691,7 +735,7 @@ with tab2:
     fig_scurve.add_trace(
         go.Scatter(
             x=scurve_df["Month"],
-            y=scurve_df["Planned Value (Baseline PV)"],
+            y=scurve_df["Planned Value (PV Baseline)"],
             mode="lines+markers",
             name="Planned Value (PV Baseline)",
             line=dict(color="#2563EB", width=3),
@@ -717,7 +761,7 @@ with tab2:
     )
 
     fig_scurve.update_layout(
-        title="Baseline Cost Performance Baseline (S-Curve Monitoring)",
+        title="Cost Performance Baseline (S-Curve Monitoring)",
         xaxis_title="Timeline (Months)",
         yaxis_title="Cumulative Cost (₱)",
         hovermode="x unified",
@@ -832,5 +876,5 @@ with tab4:
 
 st.markdown("---")
 st.caption(
-    "P6 Controls Hub Engine v3.2 | Baseline Monitored & Evaluated for Infrastructure Projects"
+    "P6 Controls Hub Engine v4.0 | Professional Project Controls & Actuals Tracking Enabled"
 )
