@@ -79,30 +79,26 @@ def format_currency_compact(val: float) -> str:
 
 
 # ==========================================
-# CPM SCHEDULING ENGINE
+# CPM SCHEDULING ENGINE (FORMULATED)
 # ==========================================
 def calculate_cpm_and_float(df: pd.DataFrame) -> pd.DataFrame:
+    """Formulates CPM Duration, Total Float, and Critical Path automatically."""
     df = df.copy()
-    df["Planned Start"] = pd.to_datetime(df["Planned Start"])
-    df["Planned Finish"] = pd.to_datetime(df["Planned Finish"])
+    
+    # Formulate Datetime conversions
+    df["Planned Start"] = pd.to_datetime(df["Planned Start"], errors="coerce")
+    df["Planned Finish"] = pd.to_datetime(df["Planned Finish"], errors="coerce")
 
-    if "Original Duration (Days)" not in df.columns:
-        df["Original Duration (Days)"] = (
-            df["Planned Finish"] - df["Planned Start"]
-        ).dt.days
+    # Formulate Original Duration = Planned Finish - Planned Start
+    df["Original Duration (Days)"] = (
+        (df["Planned Finish"] - df["Planned Start"]).dt.days
+    ).fillna(0).astype(int)
 
-    df["Early Start"] = df["Planned Start"]
-    df["Early Finish"] = df["Planned Finish"]
-    df["Late Finish"] = df["Early Finish"]
-    df["Late Start"] = df["Early Start"]
+    # Formulate Total Float
+    df["Total Float (Days)"] = pd.to_numeric(df.get("Total Float (Days)", 0), errors="coerce").fillna(0).astype(int)
 
-    df["Total Float (Days)"] = pd.to_numeric(df.get("Total Float (Days)", 0), errors="coerce").fillna(0)
-
-    if "Is Critical Path" not in df.columns:
-        df["Is Critical Path"] = df["Total Float (Days)"] <= 0
-    else:
-        df["Is Critical Path"] = df["Is Critical Path"].fillna(df["Total Float (Days)"] <= 0).astype(bool)
-
+    # Formulate Critical Path Logic
+    df["Is Critical Path"] = df["Total Float (Days)"] <= 0
     df["Path Type"] = np.where(df["Is Critical Path"], "Critical Path", "Non-Critical")
 
     return df
@@ -127,12 +123,10 @@ def get_mock_project_data():
             "Planned Finish": "2026-02-15",
             "Actual Start": "2026-01-05",
             "Actual Finish": "2026-02-15",
-            "Original Duration (Days)": 41,
             "% Complete": 100,
             "BAC (₱)": 150000.0,
             "AC (₱)": 145000.0,
             "Total Float (Days)": 0,
-            "Is Critical Path": True,
         },
         {
             "Project": "Freeport Modernization",
@@ -147,12 +141,10 @@ def get_mock_project_data():
             "Planned Finish": "2026-04-30",
             "Actual Start": "2026-02-16",
             "Actual Finish": None,
-            "Original Duration (Days)": 73,
             "% Complete": 85,
             "BAC (₱)": 450000.0,
             "AC (₱)": 410000.0,
             "Total Float (Days)": 0,
-            "Is Critical Path": True,
         },
         {
             "Project": "Freeport Modernization",
@@ -167,12 +159,10 @@ def get_mock_project_data():
             "Planned Finish": "2026-08-31",
             "Actual Start": "2026-03-05",
             "Actual Finish": None,
-            "Original Duration (Days)": 183,
             "% Complete": 50,
             "BAC (₱)": 2200000.0,
             "AC (₱)": 1300000.0,
             "Total Float (Days)": 15,
-            "Is Critical Path": False,
         },
         {
             "Project": "Freeport Modernization",
@@ -187,12 +177,10 @@ def get_mock_project_data():
             "Planned Finish": "2026-11-30",
             "Actual Start": "2026-05-05",
             "Actual Finish": None,
-            "Original Duration (Days)": 213,
             "% Complete": 30,
             "BAC (₱)": 5800000.0,
             "AC (₱)": 2100000.0,
             "Total Float (Days)": 0,
-            "Is Critical Path": True,
         },
         {
             "Project": "Freeport Modernization",
@@ -207,12 +195,10 @@ def get_mock_project_data():
             "Planned Finish": "2026-12-31",
             "Actual Start": "2026-08-10",
             "Actual Finish": None,
-            "Original Duration (Days)": 152,
             "% Complete": 10,
             "BAC (₱)": 3100000.0,
             "AC (₱)": 400000.0,
             "Total Float (Days)": 10,
-            "Is Critical Path": False,
         },
         {
             "Project": "Freeport Modernization",
@@ -227,12 +213,10 @@ def get_mock_project_data():
             "Planned Finish": "2027-02-15",
             "Actual Start": None,
             "Actual Finish": None,
-            "Original Duration (Days)": 76,
             "% Complete": 0,
             "BAC (₱)": 800000.0,
             "AC (₱)": 0.0,
             "Total Float (Days)": 0,
-            "Is Critical Path": True,
         },
         {
             "Project": "SEZ Infrastructure Phasing",
@@ -247,12 +231,10 @@ def get_mock_project_data():
             "Planned Finish": "2027-04-15",
             "Actual Start": "2027-01-15",
             "Actual Finish": None,
-            "Original Duration (Days)": 90,
             "% Complete": 90,
             "BAC (₱)": 800000.0,
             "AC (₱)": 850000.0,
             "Total Float (Days)": 0,
-            "Is Critical Path": True,
         },
         {
             "Project": "SEZ Infrastructure Phasing",
@@ -267,12 +249,10 @@ def get_mock_project_data():
             "Planned Finish": "2027-09-30",
             "Actual Start": "2027-04-05",
             "Actual Finish": None,
-            "Original Duration (Days)": 182,
             "% Complete": 40,
             "BAC (₱)": 3500000.0,
             "AC (₱)": 1600000.0,
             "Total Float (Days)": 0,
-            "Is Critical Path": True,
         },
         {
             "Project": "SEZ Infrastructure Phasing",
@@ -287,12 +267,10 @@ def get_mock_project_data():
             "Planned Finish": "2027-11-15",
             "Actual Start": "2027-05-10",
             "Actual Finish": None,
-            "Original Duration (Days)": 198,
             "% Complete": 25,
             "BAC (₱)": 2800000.0,
             "AC (₱)": 900000.0,
             "Total Float (Days)": 20,
-            "Is Critical Path": False,
         },
     ]
 
@@ -508,7 +486,7 @@ st.sidebar.download_button(
 # ==========================================
 st.title(f"📊 Project Controls: {selected_project}")
 st.caption(
-    "Enterprise Primavera P6 Analytics Engine — Baseline, Actuals, & Dynamic Timeline Calendar"
+    "Enterprise Primavera P6 Analytics Engine — Baseline, Actuals, & Dynamic Formulated Grid"
 )
 
 tab1, tab2, tab3, tab4 = st.tabs(
@@ -584,7 +562,7 @@ with tab1:
         "📝 Activity Data Editor (Baseline, Actuals & Cost Tracking Grid)"
     )
     st.caption(
-        "Update Actual Start, Actual Finish, Planned dates (2026, 2027, 2028+), physical % complete, and actual costs (₱)."
+        "Update Actual Start, Actual Finish, Planned dates, physical % complete, and actual costs (₱). Duration and CPM status are automatically formulated."
     )
 
     editor_df = filtered_df.copy()
@@ -600,12 +578,13 @@ with tab1:
         "Planned Finish": st.column_config.DateColumn("Planned Finish", format="YYYY-MM-DD"),
         "Actual Start": st.column_config.DateColumn("Actual Start", format="YYYY-MM-DD"),
         "Actual Finish": st.column_config.DateColumn("Actual Finish", format="YYYY-MM-DD"),
+        "Original Duration (Days)": st.column_config.NumberColumn("Original Duration (Days)", format="%d", help="Formulated: Planned Finish - Planned Start"),
+        "Total Float (Days)": st.column_config.NumberColumn("Total Float (Days)", format="%d", help="Enter Float days (0 or negative = Critical Path)"),
+        "Path Type": st.column_config.TextColumn("CPM Path Type", help="Formulated: Critical Path or Non-Critical", disabled=True),
+        "Is Critical Path": st.column_config.CheckboxColumn("Is Critical Path?", help="Formulated based on Float <= 0", disabled=True),
         "BAC (₱)": st.column_config.NumberColumn("BAC (₱)", format="₱%.2f"),
         "AC (₱)": st.column_config.NumberColumn("AC (₱)", format="₱%.2f"),
         "% Complete": st.column_config.NumberColumn("% Complete", min_value=0, max_value=100, step=1, format="%d%%"),
-        "Total Float (Days)": st.column_config.NumberColumn("Total Float (Days)", format="%d"),
-        "Is Critical Path": st.column_config.CheckboxColumn("Is Critical Path?", help="Check if activity is on critical path"),
-        "Path Type": st.column_config.TextColumn("CPM Path Type", disabled=True),
     }
 
     edited_df = st.data_editor(
@@ -644,10 +623,13 @@ with tab1:
             if col in edited_df.columns:
                 edited_df[col] = pd.to_datetime(edited_df[col], errors="coerce").dt.date
 
+        # Recalculate formulas upon save
+        recalculated_df = calculate_cpm_and_float(edited_df)
+
         st.session_state.df_activities = pd.concat(
-            [other_projects_df, edited_df], ignore_index=True
+            [other_projects_df, recalculated_df], ignore_index=True
         )
-        st.success("Actuals saved & performance metrics re-computed!")
+        st.success("Formulas updated & schedule saved successfully!")
         st.rerun()
 
 
@@ -938,5 +920,5 @@ with tab4:
 
 st.markdown("---")
 st.caption(
-    "P6 Controls Hub Engine v5.3 | Syntax Verified & Production Ready"
+    "P6 Controls Hub Engine v6.0 | Formulated Calculation Engine Active"
 )
