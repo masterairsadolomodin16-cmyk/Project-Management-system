@@ -724,7 +724,6 @@ with tab2:
     st.write("")
     st.subheader("📈 Time-Phased Performance S-Curve with Data Date (Baseline Status Line)")
 
-    # Interactive Data Date Selector for monitoring slippage
     months = pd.date_range(
         start="2026-01-01", periods=12, freq="MS"
     ).strftime("%Y-%m").tolist()
@@ -738,7 +737,6 @@ with tab2:
     cum_ac = cum_ev / (cpi if cpi > 0 else 1.1)
 
     data_date_idx = months.index(selected_data_date)
-    # Mask actuals and earned values after the selected data date
     cum_ev[data_date_idx + 1:] = np.nan
     cum_ac[data_date_idx + 1:] = np.nan
 
@@ -778,14 +776,26 @@ with tab2:
         )
     )
 
-    # Add Vertical Data Date Line for Slippage Monitoring
-    fig_scurve.add_vline(
+    # Fixed Safe Vertical Shape Line for Data Date / Slippage Tracking
+    fig_scurve.add_shape(
+        type="line",
+        x0=selected_data_date,
+        y0=0,
+        x1=selected_data_date,
+        y1=1,
+        yref="paper",
+        line=dict(color="#E11D48", width=3, dash="dash")
+    )
+    
+    fig_scurve.add_annotation(
         x=selected_data_date,
-        line_width=3,
-        line_dash="dash",
-        line_color="#E11D48",
-        annotation_text=f"Data Date: {selected_data_date}",
-        annotation_position="top right"
+        y=1,
+        yref="paper",
+        text=f"Data Date: {selected_data_date}",
+        showarrow=False,
+        xanchor="left",
+        yanchor="bottom",
+        font=dict(color="#E11D48", size=12, family="sans-serif")
     )
 
     fig_scurve.update_layout(
@@ -904,5 +914,5 @@ with tab4:
 
 st.markdown("---")
 st.caption(
-    "P6 Controls Hub Engine v4.1 | Professional Data Date & Slippage Evaluation Enabled"
+    "P6 Controls Hub Engine v4.2 | Professional Data Date & Slippage Evaluation Enabled"
 )
