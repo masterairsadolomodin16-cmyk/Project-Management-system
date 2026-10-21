@@ -70,6 +70,7 @@ st.markdown(
 
 
 def format_currency_compact(val: float) -> str:
+    """Formats monetary figures in Philippine Peso (₱) concisely."""
     if abs(val) >= 1_000_000:
         return f"₱{val / 1_000_000:,.2f}M"
     elif abs(val) >= 1_000:
@@ -238,11 +239,11 @@ def get_mock_project_data():
             "WBS Phase": "Earthworks",
             "Activity Name": "Site Clearing & Bulk Grading",
             "Contractor": "EarthMovers Inc",
-            "Baseline Start": "2026-01-15",
-            "Baseline Finish": "2026-04-15",
-            "Planned Start": "2026-01-15",
-            "Planned Finish": "2026-04-15",
-            "Actual Start": "2026-01-15",
+            "Baseline Start": "2027-01-15",
+            "Baseline Finish": "2027-04-15",
+            "Planned Start": "2027-01-15",
+            "Planned Finish": "2027-04-15",
+            "Actual Start": "2027-01-15",
             "Actual Finish": None,
             "Original Duration (Days)": 90,
             "% Complete": 90,
@@ -258,11 +259,11 @@ def get_mock_project_data():
             "WBS Phase": "Utilities",
             "Activity Name": "High Voltage Substation Construction",
             "Contractor": "PowerGrid Dynamics",
-            "Baseline Start": "2026-04-01",
-            "Baseline Finish": "2026-09-30",
-            "Planned Start": "2026-04-01",
-            "Planned Finish": "2026-09-30",
-            "Actual Start": "2026-04-05",
+            "Baseline Start": "2027-04-01",
+            "Baseline Finish": "2027-09-30",
+            "Planned Start": "2027-04-01",
+            "Planned Finish": "2027-09-30",
+            "Actual Start": "2027-04-05",
             "Actual Finish": None,
             "Original Duration (Days)": 182,
             "% Complete": 40,
@@ -278,11 +279,11 @@ def get_mock_project_data():
             "WBS Phase": "Utilities",
             "Activity Name": "Water Treatment Plant & Piping Network",
             "Contractor": "AquaInfrastructure",
-            "Baseline Start": "2026-05-01",
-            "Baseline Finish": "2026-11-15",
-            "Planned Start": "2026-05-01",
-            "Planned Finish": "2026-11-15",
-            "Actual Start": "2026-05-10",
+            "Baseline Start": "2027-05-01",
+            "Baseline Finish": "2027-11-15",
+            "Planned Start": "2027-05-01",
+            "Planned Finish": "2027-11-15",
+            "Actual Start": "2027-05-10",
             "Actual Finish": None,
             "Original Duration (Days)": 198,
             "% Complete": 25,
@@ -359,14 +360,14 @@ def get_mock_project_data():
         },
         {
             "Project": "SEZ Infrastructure Phasing",
-            "Month": "2026-01",
+            "Month": "2027-01",
             "Resource Type": "Civil Engineers",
             "Allocated Hours": 600,
             "Capacity Limit": 800,
         },
         {
             "Project": "SEZ Infrastructure Phasing",
-            "Month": "2026-02",
+            "Month": "2027-02",
             "Resource Type": "Heavy Equipment",
             "Allocated Hours": 1100,
             "Capacity Limit": 1000,
@@ -425,7 +426,7 @@ def get_mock_project_data():
         {
             "Project": "SEZ Infrastructure Phasing",
             "Milestone": "Earthworks Phase 1 Completion",
-            "Target Date": "2026-04-15",
+            "Target Date": "2027-04-15",
             "Status": "On Track",
         },
     ]
@@ -505,7 +506,7 @@ st.sidebar.download_button(
 # ==========================================
 st.title(f"📊 Project Controls: {selected_project}")
 st.caption(
-    "Enterprise Primavera P6 Analytics Engine — Baseline, Actuals, & Performance Monitored"
+    "Enterprise Primavera P6 Analytics Engine — Baseline, Actuals, & Dynamic Timeline Calendar"
 )
 
 tab1, tab2, tab3, tab4 = st.tabs(
@@ -578,7 +579,7 @@ with tab1:
         "📝 Activity Data Editor (Baseline, Actuals & Cost Tracking Grid)"
     )
     st.caption(
-        "Update Actual Start, Actual Finish, Planned dates, physical % complete, and actual costs (₱)."
+        "Update Actual Start, Actual Finish, Planned dates (2026, 2027, 2028+), physical % complete, and actual costs (₱)."
     )
 
     editor_df = filtered_df.copy()
@@ -724,21 +725,37 @@ with tab2:
     st.write("")
     st.subheader("📈 Time-Phased Performance S-Curve with Data Date (Baseline Status Line)")
 
-    months = pd.date_range(
-        start="2026-01-01", periods=12, freq="MS"
-    ).strftime("%Y-%m").tolist()
-    
+    # Dynamic Month Generation based on actual WBS start/finish date ranges
+    all_starts = pd.to_datetime(filtered_df["Planned Start"], errors="coerce").dropna()
+    all_finishes = pd.to_datetime(filtered_df["Planned Finish"], errors="coerce").dropna()
+
+    min_date = all_starts.min() if not all_starts.empty else pd.Timestamp("2026-01-01")
+    max_date = all_finishes.max() if not all_finishes.empty else pd.Timestamp("2026-12-31")
+
+    # Generate monthly series dynamically (covers 2026, 2027, 2028+)
+    months_series = pd.date_range(start=min_date, end=max_date + pd.Timedelta(days=30), freq="MS")
+    months = months_series.strftime("%Y-%m").tolist()
+    if len(months) < 2:
+        months = ["2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06"]
+
     col_d1, col_d2 = st.columns([2, 2])
     with col_d1:
-        selected_data_date = st.selectbox("📅 Select Status Data Date (Current Progress Point)", months, index=5)
+        # Interactive Calendar Date Picker replacing dropdown
+        selected_data_date_obj = st.date_input(
+            "📅 Select Status Data Date (Current Progress Point)",
+            value=datetime.date(min_date.year, min_date.month, 15) if min_date else datetime.date(2026, 6, 15),
+            help="Pick any date across 2026, 2027, 2028+ using the calendar view.",
+        )
+        selected_data_date = selected_data_date_obj.strftime("%Y-%m")
 
-    cum_pv = np.cumsum(np.linspace(bac * 0.04, bac * 0.12, 12))
+    cum_pv = np.cumsum(np.linspace(bac * 0.04, bac * (1.0 / len(months)), len(months)))
     cum_ev = cum_pv * (spi if spi > 0 else 0.9)
     cum_ac = cum_ev / (cpi if cpi > 0 else 1.1)
 
-    data_date_idx = months.index(selected_data_date)
-    cum_ev[data_date_idx + 1:] = np.nan
-    cum_ac[data_date_idx + 1:] = np.nan
+    if selected_data_date in months:
+        data_date_idx = months.index(selected_data_date)
+        cum_ev[data_date_idx + 1:] = np.nan
+        cum_ac[data_date_idx + 1:] = np.nan
 
     scurve_df = pd.DataFrame({
         "Month": months,
@@ -776,7 +793,7 @@ with tab2:
         )
     )
 
-    # Fixed Safe Vertical Shape Line for Data Date / Slippage Tracking
+    # Vertical Data Date Line for Slippage Tracking across calendar dates
     fig_scurve.add_shape(
         type="line",
         x0=selected_data_date,
@@ -791,7 +808,7 @@ with tab2:
         x=selected_data_date,
         y=1,
         yref="paper",
-        text=f"Data Date: {selected_data_date}",
+        text=f"Data Date: {selected_data_date_obj.strftime('%Y-%m-%d')}",
         showarrow=False,
         xanchor="left",
         yanchor="bottom",
@@ -799,7 +816,7 @@ with tab2:
     )
 
     fig_scurve.update_layout(
-        title=f"Cost Performance Baseline & Slippage Analysis (Status Date: {selected_data_date})",
+        title=f"Cost Performance Baseline & Slippage Analysis (Status Date: {selected_data_date_obj.strftime('%Y-%m-%d')})",
         xaxis_title="Timeline (Months)",
         yaxis_title="Cumulative Cost (₱)",
         hovermode="x unified",
@@ -914,5 +931,5 @@ with tab4:
 
 st.markdown("---")
 st.caption(
-    "P6 Controls Hub Engine v4.2 | Professional Data Date & Slippage Evaluation Enabled"
+    "P6 Controls Hub Engine v5.0 | Dynamic Calendar Picker & Multi-Year Timeline Enabled"
 )
