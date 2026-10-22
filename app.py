@@ -1,4 +1,5 @@
 import io
+import os
 import datetime
 import numpy as np
 import pandas as pd
@@ -10,8 +11,8 @@ import streamlit as st
 # PAGE CONFIGURATION & DESIGN SYSTEM
 # ==========================================
 st.set_page_config(
-    page_title="P6 Primavera Pro - Project Controls Hub",
-    page_icon="🏗️",
+    page_title="BEZA - Advanced Project Controls & Investment Appraisal Hub",
+    page_icon="🏛️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -20,16 +21,19 @@ def hide_streamlit_branding():
     """Hides Streamlit branding, top header, footer, and viewer badge."""
     hide_css = """
     <style>
-        /* Orbit Admin Inspired Design System */
+        /* BEZA Government Enterprise Design System */
         :root {
-            --blue: #3467eb;
-            --orange: #ff8a3d;
+            --beza-navy: #0B2545;
+            --beza-slate: #134074;
+            --beza-blue: #8DA9C4;
+            --beza-light: #EEF4F8;
+            --beza-accent: #EE9B00;
             --ink: #17233c;
-            --muted: #7d889f;
-            --line: #e9edf5;
-            --page: #f5f7fc;
-            --green: #18a879;
-            --sidebar: #172746;
+            --muted: #64748b;
+            --line: #e2e8f0;
+            --page: #f8fafc;
+            --green: #10b981;
+            --sidebar: #0B2545;
         }
 
         .stApp {
@@ -61,14 +65,14 @@ def hide_streamlit_branding():
         [data-testid="stSidebar"] .stMarkdown h2, 
         [data-testid="stSidebar"] .stMarkdown h3,
         [data-testid="stSidebar"] label {
-            color: #b7c3db !important;
+            color: #cbd5e1 !important;
         }
 
         /* Modern Headers */
         .main-header {
             font-size: 22px;
             font-weight: 800;
-            color: var(--ink);
+            color: var(--beza-navy);
             letter-spacing: -0.5px;
             border-bottom: 2px solid var(--line);
             padding-bottom: 8px;
@@ -79,18 +83,18 @@ def hide_streamlit_branding():
         .stMetric {
             background: white;
             padding: 16px 18px;
-            border-radius: 14px;
+            border-radius: 12px;
             border: 1px solid var(--line);
-            box-shadow: 0 4px 16px rgba(35, 58, 101, 0.04);
+            box-shadow: 0 4px 12px rgba(11, 37, 69, 0.04);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .stMetric:hover {
-            box-shadow: 0 6px 20px rgba(35, 58, 101, 0.08);
+            box-shadow: 0 6px 16px rgba(11, 37, 69, 0.08);
         }
         [data-testid="stMetricValue"] {
             font-size: 1.5rem !important;
             font-weight: 800 !important;
-            color: var(--ink) !important;
+            color: var(--beza-navy) !important;
             white-space: nowrap !important;
         }
         [data-testid="stMetricLabel"] {
@@ -103,31 +107,31 @@ def hide_streamlit_branding():
 
         /* Status Badges */
         .status-ok {
-            background-color: #e8f8f1;
-            color: #15966b;
-            padding: 10px 14px;
+            background-color: #ecfdf5;
+            color: #047857;
+            padding: 12px 16px;
             border-radius: 10px;
             font-weight: 700;
             font-size: 13px;
-            border: 1px solid #d1f2e3;
+            border: 1px solid #a7f3d0;
         }
         .status-warn {
-            background-color: #fff4e5;
-            color: #c67a22;
-            padding: 10px 14px;
+            background-color: #fffbeb;
+            color: #b45309;
+            padding: 12px 16px;
             border-radius: 10px;
             font-weight: 700;
             font-size: 13px;
-            border: 1px solid #ffe3c4;
+            border: 1px solid #fde68a;
         }
         .status-alert {
-            background-color: #fff0f1;
-            color: #d45061;
-            padding: 10px 14px;
+            background-color: #fef2f2;
+            color: #b91c1c;
+            padding: 12px 16px;
             border-radius: 10px;
             font-weight: 700;
             font-size: 13px;
-            border: 1px solid #ffd6dc;
+            border: 1px solid #fecaca;
         }
 
         /* Tabs Styling */
@@ -137,7 +141,7 @@ def hide_streamlit_branding():
             padding-bottom: 10px;
         }
         .stTabs [data-baseweb="tab"] {
-            height: 42px;
+            height: 44px;
             border-radius: 10px;
             background-color: white;
             border: 1px solid var(--line);
@@ -147,7 +151,7 @@ def hide_streamlit_branding():
             padding: 0 16px;
         }
         .stTabs [aria-selected="true"] {
-            background: linear-gradient(100deg, #3467eb, #4777f3) !important;
+            background: linear-gradient(135deg, #0B2545, #134074) !important;
             color: white !important;
             border: none !important;
         }
@@ -156,7 +160,6 @@ def hide_streamlit_branding():
     st.markdown(hide_css, unsafe_allow_html=True)
 
 hide_streamlit_branding()
-
 
 def format_currency_compact(val: float) -> str:
     """Formats monetary figures in Philippine Peso (₱) concisely."""
@@ -171,7 +174,7 @@ def format_currency_compact(val: float) -> str:
 # CPM SCHEDULING ENGINE (INTERACTIVE)
 # ==========================================
 def calculate_cpm_and_float(df: pd.DataFrame) -> pd.DataFrame:
-    """Processes schedule durations, finish dates, and editable critical path status[cite: 1]."""
+    """Processes schedule durations, finish dates, and editable critical path status."""
     df = df.copy()
     
     df["Planned Start"] = pd.to_datetime(df["Planned Start"], errors="coerce")
@@ -387,140 +390,30 @@ def get_mock_project_data():
     ]
 
     resource_data = [
-        {
-            "Project": "Freeport Modernization",
-            "Month": "2026-01",
-            "Resource Type": "Civil Engineers",
-            "Allocated Hours": 1200,
-            "Capacity Limit": 1000,
-        },
-        {
-            "Project": "Freeport Modernization",
-            "Month": "2026-02",
-            "Resource Type": "Civil Engineers",
-            "Allocated Hours": 1100,
-            "Capacity Limit": 1000,
-        },
-        {
-            "Project": "Freeport Modernization",
-            "Month": "2026-03",
-            "Resource Type": "Civil Engineers",
-            "Allocated Hours": 900,
-            "Capacity Limit": 1000,
-        },
-        {
-            "Project": "Freeport Modernization",
-            "Month": "2026-01",
-            "Resource Type": "Heavy Equipment",
-            "Allocated Hours": 800,
-            "Capacity Limit": 1200,
-        },
-        {
-            "Project": "Freeport Modernization",
-            "Month": "2026-02",
-            "Resource Type": "Heavy Equipment",
-            "Allocated Hours": 1400,
-            "Capacity Limit": 1200,
-        },
-        {
-            "Project": "Freeport Modernization",
-            "Month": "2026-03",
-            "Resource Type": "Heavy Equipment",
-            "Allocated Hours": 1600,
-            "Capacity Limit": 1200,
-        },
-        {
-            "Project": "Freeport Modernization",
-            "Month": "2026-04",
-            "Resource Type": "Heavy Equipment",
-            "Allocated Hours": 1300,
-            "Capacity Limit": 1200,
-        },
-        {
-            "Project": "Freeport Modernization",
-            "Month": "2026-01",
-            "Resource Type": "Laborers",
-            "Allocated Hours": 2500,
-            "Capacity Limit": 3000,
-        },
-        {
-            "Project": "Freeport Modernization",
-            "Month": "2026-02",
-            "Resource Type": "Laborers",
-            "Allocated Hours": 3200,
-            "Capacity Limit": 3000,
-        },
-        {
-            "Project": "SEZ Infrastructure Phasing",
-            "Month": "2027-01",
-            "Resource Type": "Civil Engineers",
-            "Allocated Hours": 600,
-            "Capacity Limit": 800,
-        },
-        {
-            "Project": "SEZ Infrastructure Phasing",
-            "Month": "2027-02",
-            "Resource Type": "Heavy Equipment",
-            "Allocated Hours": 1100,
-            "Capacity Limit": 1000,
-        },
+        {"Project": "Freeport Modernization", "Month": "2026-01", "Resource Type": "Civil Engineers", "Allocated Hours": 1200, "Capacity Limit": 1000},
+        {"Project": "Freeport Modernization", "Month": "2026-02", "Resource Type": "Civil Engineers", "Allocated Hours": 1100, "Capacity Limit": 1000},
+        {"Project": "Freeport Modernization", "Month": "2026-03", "Resource Type": "Civil Engineers", "Allocated Hours": 900, "Capacity Limit": 1000},
+        {"Project": "Freeport Modernization", "Month": "2026-01", "Resource Type": "Heavy Equipment", "Allocated Hours": 800, "Capacity Limit": 1200},
+        {"Project": "Freeport Modernization", "Month": "2026-02", "Resource Type": "Heavy Equipment", "Allocated Hours": 1400, "Capacity Limit": 1200},
+        {"Project": "Freeport Modernization", "Month": "2026-03", "Resource Type": "Heavy Equipment", "Allocated Hours": 1600, "Capacity Limit": 1200},
+        {"Project": "Freeport Modernization", "Month": "2026-04", "Resource Type": "Heavy Equipment", "Allocated Hours": 1300, "Capacity Limit": 1200},
+        {"Project": "Freeport Modernization", "Month": "2026-01", "Resource Type": "Laborers", "Allocated Hours": 2500, "Capacity Limit": 3000},
+        {"Project": "Freeport Modernization", "Month": "2026-02", "Resource Type": "Laborers", "Allocated Hours": 3200, "Capacity Limit": 3000},
+        {"Project": "SEZ Infrastructure Phasing", "Month": "2027-01", "Resource Type": "Civil Engineers", "Allocated Hours": 600, "Capacity Limit": 800},
+        {"Project": "SEZ Infrastructure Phasing", "Month": "2027-02", "Resource Type": "Heavy Equipment", "Allocated Hours": 1100, "Capacity Limit": 1000},
     ]
 
     risk_data = [
-        {
-            "Project": "Freeport Modernization",
-            "Risk ID": "RSK-01",
-            "Risk Event": "Monsoon / Extreme Weather delays marine dredging",
-            "Probability (1-5)": 4,
-            "Impact (1-5)": 4,
-            "Mitigation Strategy": "Deploy additional secondary dredgers during clear windows.",
-            "Owner": "Marine Contractor",
-        },
-        {
-            "Project": "Freeport Modernization",
-            "Risk ID": "RSK-02",
-            "Risk Event": "Supply Chain delay for Ship-to-Shore cranes",
-            "Probability (1-5)": 3,
-            "Impact (1-5)": 5,
-            "Mitigation Strategy": "Issue early long-lead purchase orders.",
-            "Owner": "Procurement Lead",
-        },
-        {
-            "Project": "SEZ Infrastructure Phasing",
-            "Risk ID": "RSK-03",
-            "Risk Event": "Delays in environmental clearance for power substation",
-            "Probability (1-5)": 2,
-            "Impact (1-5)": 4,
-            "Mitigation Strategy": "Engage municipal regulatory liaison.",
-            "Owner": "Permitting Lead",
-        },
+        {"Project": "Freeport Modernization", "Risk ID": "RSK-01", "Risk Event": "Monsoon / Extreme Weather delays marine dredging", "Probability (1-5)": 4, "Impact (1-5)": 4, "Mitigation Strategy": "Deploy additional secondary dredgers during clear windows.", "Owner": "Marine Contractor"},
+        {"Project": "Freeport Modernization", "Risk ID": "RSK-02", "Risk Event": "Supply Chain delay for Ship-to-Shore cranes", "Probability (1-5)": 3, "Impact (1-5)": 5, "Mitigation Strategy": "Issue early long-lead purchase orders.", "Owner": "Procurement Lead"},
+        {"Project": "SEZ Infrastructure Phasing", "Risk ID": "RSK-03", "Risk Event": "Delays in environmental clearance for power substation", "Probability (1-5)": 2, "Impact (1-5)": 4, "Mitigation Strategy": "Engage municipal regulatory liaison.", "Owner": "Permitting Lead"},
     ]
 
     milestone_data = [
-        {
-            "Project": "Freeport Modernization",
-            "Milestone": "Geotechnical Survey Signoff",
-            "Target Date": "2026-02-15",
-            "Status": "Completed",
-        },
-        {
-            "Project": "Freeport Modernization",
-            "Milestone": "Dredging Works Commencement",
-            "Target Date": "2026-05-01",
-            "Status": "On Track",
-        },
-        {
-            "Project": "Freeport Modernization",
-            "Milestone": "STS Cranes On-Site Arrival",
-            "Target Date": "2026-08-31",
-            "Status": "At Risk",
-        },
-        {
-            "Project": "SEZ Infrastructure Phasing",
-            "Milestone": "Earthworks Phase 1 Completion",
-            "Target Date": "2027-04-15",
-            "Status": "On Track",
-        },
+        {"Project": "Freeport Modernization", "Milestone": "Geotechnical Survey Signoff", "Target Date": "2026-02-15", "Status": "Completed"},
+        {"Project": "Freeport Modernization", "Milestone": "Dredging Works Commencement", "Target Date": "2026-05-01", "Status": "On Track"},
+        {"Project": "Freeport Modernization", "Milestone": "STS Cranes On-Site Arrival", "Target Date": "2026-08-31", "Status": "At Risk"},
+        {"Project": "SEZ Infrastructure Phasing", "Milestone": "Earthworks Phase 1 Completion", "Target Date": "2027-04-15", "Status": "On Track"},
     ]
 
     df_act = pd.DataFrame(activities_data)
@@ -548,16 +441,33 @@ if "df_activities" not in st.session_state:
 
 
 # ==========================================
-# SIDEBAR CONTROLS & NAVIGATION
+# SIDEBAR CONTROLS & NAVIGATION (BEZA BRANDED)
 # ==========================================
-st.sidebar.markdown("### ✦ orbit.admin")
-st.sidebar.markdown("#### P6 Controls Engine")
+logo_paths = [
+    "BEZA-LOGO-Copy-300x300.png",
+    "assets/BEZA-LOGO-Copy-300x300.png",
+    "./BEZA-LOGO-Copy-300x300.png",
+    "../BEZA-LOGO-Copy-300x300.png"
+]
+logo_path = None
+for p in logo_paths:
+    if os.path.exists(p):
+        logo_path = p
+        break
+
+if logo_path:
+    st.sidebar.image(logo_path, width=140)
+else:
+    st.sidebar.markdown("🏛️ **BEZA**")
+
+st.sidebar.markdown("### Bangsamoro Economic Zone Authority")
+st.sidebar.markdown("#### Investment & Project Controls Hub")
 st.sidebar.markdown("---")
 
 projects = st.session_state.df_activities["Project"].unique().tolist()
 selected_project = st.sidebar.selectbox("Select Project Workspace", projects)
 
-st.sidebar.markdown("#### 🔍 Filters")
+st.sidebar.markdown("#### 🔍 Workspace Filters")
 project_activities = st.session_state.df_activities[
     st.session_state.df_activities["Project"] == selected_project
 ]
@@ -590,7 +500,7 @@ excel_data = output.getvalue()
 st.sidebar.download_button(
     label="📥 Export Workspace (Excel)",
     data=excel_data,
-    file_name=f"P6_Export_{selected_project.replace(' ', '_')}.xlsx",
+    file_name=f"BEZA_P6_Export_{selected_project.replace(' ', '_')}.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 )
 
@@ -598,17 +508,18 @@ st.sidebar.download_button(
 # ==========================================
 # MAIN APPLICATION INTERFACE
 # ==========================================
-st.title(f"Project Controls: {selected_project}")
+st.title(f"BEZA Project Workspace: {selected_project}")
 st.caption(
-    "Enterprise Primavera P6 Analytics Engine — Interactive Duration-Driven Schedule Grid"
+    "Bangsamoro Economic Zone Authority — Enterprise Infrastructure Investment Appraisal & Project Controls"
 )
 
-tab1, tab2, tab3, tab4 = st.tabs(
+tab1, tab2, tab3, tab4, tab5 = st.tabs(
     [
         "📅 Schedule & WBS (Gantt)",
         "📈 Earned Value (EVM & S-Curve)",
         "🚜 Resource Allocation",
         "⚠️ Risk & Milestones",
+        "💼 Economic Viability & Appraisal",
     ]
 )
 
@@ -633,8 +544,8 @@ with tab1:
 
     if not view_df.empty:
         color_discrete_map = {
-            "Critical Path": "#E11D48",
-            "Non-Critical": "#3467EB"
+            "Critical Path": "#EF4444",
+            "Non-Critical": "#0B2545"
         }
 
         fig_gantt = px.timeline(
@@ -877,7 +788,7 @@ with tab2:
             y=scurve_df["Planned Value (PV Baseline)"],
             mode="lines+markers",
             name="Planned Value (PV Baseline)",
-            line=dict(color="#3467EB", width=3),
+            line=dict(color="#0B2545", width=3),
         )
     )
     fig_scurve.add_trace(
@@ -886,7 +797,7 @@ with tab2:
             y=scurve_df["Earned Value (EV)"],
             mode="lines+markers",
             name="Earned Value (EV)",
-            line=dict(color="#18A879", width=3),
+            line=dict(color="#10B981", width=3),
         )
     )
     fig_scurve.add_trace(
@@ -895,7 +806,7 @@ with tab2:
             y=scurve_df["Actual Cost (AC)"],
             mode="lines+markers",
             name="Actual Cost (AC)",
-            line=dict(color="#D45061", width=3, dash="dash"),
+            line=dict(color="#EF4444", width=3, dash="dash"),
         )
     )
 
@@ -906,7 +817,7 @@ with tab2:
         x1=selected_data_date,
         y1=1,
         yref="paper",
-        line=dict(color="#E11D48", width=3, dash="dash")
+        line=dict(color="#B91C1C", width=3, dash="dash")
     )
     
     fig_scurve.add_annotation(
@@ -917,7 +828,7 @@ with tab2:
         showarrow=False,
         xanchor="left",
         yanchor="bottom",
-        font=dict(color="#E11D48", size=12, family="sans-serif")
+        font=dict(color="#B91C1C", size=12, family="sans-serif")
     )
 
     fig_scurve.update_layout(
@@ -965,8 +876,8 @@ with tab3:
                 marker_color=np.where(
                     filtered_res["Allocated Hours"]
                     > filtered_res["Capacity Limit"],
-                    "#D45061",
-                    "#3467EB",
+                    "#EF4444",
+                    "#134074",
                 ),
             )
         )
@@ -975,7 +886,7 @@ with tab3:
                 x=filtered_res["Month"],
                 y=filtered_res["Capacity Limit"],
                 name="Max Monthly Capacity Limit",
-                line=dict(color="#FF8A3D", width=3, dash="dot"),
+                line=dict(color="#EE9B00", width=3, dash="dot"),
             )
         )
 
@@ -1038,7 +949,104 @@ with tab4:
         else:
             st.info("No active risks logged.")
 
+
+# ------------------------------------------
+# TAB 5: ECONOMIC VIABILITY & APPRAISAL
+# ------------------------------------------
+with tab5:
+    st.markdown(
+        '<div class="main-header">Infrastructure Economic Viability & Financial Appraisal Workspace</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        Welcome to the **BEZA Investment Appraisal & Economic Viability Workspace**. 
+        This specialized executive module evaluates capital projects across financial returns (FNPV, FIRR), 
+        socio-economic benefits (ENPV, EIRR, BCR), debt servicing capacity (DSCR), and sensitivity risk profiles.
+        """
+    )
+
+    col_app1, col_app2, col_app3 = st.columns(3)
+    col_app1.metric("Financial NPV (FNPV @ 10%)", "₱482.50M", delta="+12.4% vs Baseline")
+    col_app2.metric("Financial IRR (FIRR)", "16.8%", delta="Hurdle: 10.0%")
+    col_app3.metric("Economic IRR (EIRR)", "21.5%", delta="Social Discount: 9%")
+
+    st.markdown("---")
+
+    app_tab_a, app_tab_b, app_tab_c = st.tabs([
+        "🏗️ 1. Overview & Cost-Benefit",
+        "📊 2. Financial & Debt Analysis",
+        "📄 3. Printable Appraisal Report"
+    ])
+
+    with app_tab_a:
+        st.subheader("Project Economic Appraisal Summary")
+        st.markdown(
+            """
+            * **Project Category**: Regional Port & Economic Zone Logistics Expansion
+            * **Appraisal Status**: Reviewed & Recommended for Board Concurrence
+            * **Economic Net Present Value (ENPV)**: ₱890.42 Million
+            * **Benefit-Cost Ratio (BCR)**: 1.84 (Meets NEDA-ICC criteria > 1.0)
+            """
+        )
+        
+        # Cash Flow Projection Chart
+        cf_years = [f"Yr {i}" for i in range(1, 11)]
+        cf_net = [-1200, -800, 200, 450, 680, 850, 920, 950, 980, 1050]
+        
+        fig_cf = px.bar(
+            x=cf_years, y=cf_net,
+            title="Project Net Cash Flow Projections (10-Year Horizon)",
+            labels={"x": "Project Timeline", "y": "Net Cash Flow (₱M)"},
+            color=cf_net,
+            color_continuous_scale=["#EF4444", "#10B981"]
+        )
+        fig_cf.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=350)
+        st.plotly_chart(fig_cf, use_container_width=True)
+
+    with app_tab_b:
+        st.subheader("Financing Structure & Debt Service Coverage (DSCR)")
+        st.markdown(
+            """
+            * **Total Capital Expenditure (CAPEX)**: ₱3,500,000,000.00
+            * **Debt Financing (70%)**: ₱2,450,000,000.00 @ 6.5% interest rate (15-year term)
+            * **Equity Financing (30%)**: ₱1,050,000,000.00
+            * **Minimum DSCR**: 1.45x (Threshold: 1.20x) — *Robust debt repayment capacity.*
+            """
+        )
+        
+        debt_schedule = pd.DataFrame({
+            "Year": [f"Year {i}" for i in range(1, 6)],
+            "Principal Repayment (₱M)": [120, 140, 160, 185, 210],
+            "Interest Payment (₱M)": [159, 149, 138, 126, 112],
+            "DSCR Ratio": [1.35, 1.42, 1.50, 1.58, 1.65]
+        })
+        st.dataframe(debt_schedule, use_container_width=True)
+
+    with app_tab_c:
+        st.subheader("Printable Investment Appraisal Report Preview")
+        st.markdown(
+            """
+            > **BANGSAMORO ECONOMIC ZONE AUTHORITY (BEZA)**  
+            > **OFFICE OF THE EXECUTIVE DIRECTOR — INVESTMENT PROMOTION & EVALUATION GROUP**  
+            > *Project Appraisal Committee Report #2026-BEZA-049*  
+            > 
+            > **Project Name**: Freeport Modernization & SEZ Infrastructure Phasing  
+            > **Recommendation**: APPROVED FOR IMPLEMENTATION SUBJECT TO ENVIRONMENTAL COMPLIANCE CERTIFICATE (ECC) CONDITIONS.  
+            > 
+            > **Summary of Findings**:  
+            > The economic appraisal confirms that the project yields substantial net positive socio-economic benefits to the Bangsamoro Autonomous Region, with an EIRR of 21.5% and a robust Benefit-Cost Ratio of 1.84. Financial viability is secured via a balanced 70:30 debt-equity structure with healthy DSCR margins.
+            """
+        )
+        st.download_button(
+            label="📥 Download Official Appraisal Report (PDF)",
+            data=b"BEZA Official Appraisal Report PDF Binary Data Placeholder",
+            file_name=f"BEZA_Appraisal_Report_{selected_project.replace(' ', '_')}.pdf",
+            mime="application/pdf"
+        )
+
 st.markdown("---")
 st.caption(
-    "P6 Controls Hub Engine v6.3 | Orbit Admin Design System & Branding Cleanup Active"
+    "Bangsamoro Economic Zone Authority (BEZA) | Project Controls Hub Engine v6.3 | Enterprise UI/UX Refactored"
 )
